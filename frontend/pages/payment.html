@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Complete Your Payment</title>
+    
+    <link rel="stylesheet" href="../css/fonts.css">
+    
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/sidebar.css">
+    <link rel="stylesheet" href="../css/header.css">
+    <link rel="stylesheet" href="../css/footer.css">
+    
+    <link rel="stylesheet" href="../css/payment.css">
+</head>
+<body class="app-layout">
+
+    <aside id="sidebar-placeholder"></aside>
+
+    <main class="main-content">
+
+        <header id="header-placeholder"></header>
+
+        <div class="page-content">
+            
+            <div class="payment-container">
+
+                <section class="payment-summary">
+                    <h2 class="payment-title">Booking Summary</h2>
+                    <div class="summary-card">
+                        <div class="summary-line">
+                            <span>Parking Lot:</span>
+                            <span id="summary-lot-name">Main St. Garage</span>
+                        </div>
+                        <div class="summary-line">
+                            <span>Spot:</span>
+                            <span id="summary-spot-name">B-05</span>
+                        </div>
+                        <div class="summary-line">
+                            <span>Start Time:</span>
+                            <span id="summary-start-time">Oct 29, 2025, 1:00 PM</span>
+                        </div>
+                        <div class="summary-line">
+                            <span>End Time:</span>
+                            <span id="summary-end-time">Oct 29, 2025, 3:00 PM</span>
+                        </div>
+                        <div class="summary-line summary-total">
+                            <span>Total Due:</span>
+                            <span id="summary-total">$10.00</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="payment-form-container">
+                    <h2 class="payment-title">Payment Details</h2>
+                    
+                    <form id="payment-form" class="payment-form">
+                        
+                        <div class="form-group">
+                            <label for="card-name" class="form-label">Cardholder Name</label>
+                            <input type="text" id="card-name" class="form-control" placeholder="e.g., John M. Doe" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="card-number" class="form-label">Card Number</label>
+                            <input type="text" id="card-number" class="form-control" placeholder="0000 0000 0000 0000" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group form-group-half">
+                                <label for="card-expiry" class="form-label">Expiry Date</label>
+                                <input type="text" id="card-expiry" class="form-control" placeholder="MM / YY" required>
+                            </div>
+                            <div class="form-group form-group-half">
+                                <label for="card-cvc" class="form-label">CVC</label>
+                                <input type="text" id="card-cvc" class="form-control" placeholder="123" required>
+                            </div>
+                        </div>
+                        
+                        <p id="payment-error" class="form-error" aria-live="assertive"></p>
+                        
+                        <button type="submit" id="pay-now-btn" class="btn btn-primary btn-full-width">
+                            Pay Now ($10.00)
+                        </button>
+                        
+                    </form>
+                </section>
+
+            </div> </div> <footer id="footer-placeholder"></footer>
+
+    </main> <script src="../js/main.js" defer></script>
+    
+    <script src="../js/payment.js" defer></script>
+
+</body>
+</html>

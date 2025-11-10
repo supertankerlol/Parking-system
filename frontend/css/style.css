@@ -1,0 +1,374 @@
+/* --- [GLOBAL STYLESHEET] ---
+   This file contains all your site-wide variables,
+   base styles, and utility classes (like .btn).
+*/
+
+
+/* 2. COLOR & STYLE VARIABLES */
+:root {
+    /* [LIGHT MODE - Default] */
+    
+    /* Brand Colors */
+    --color-primary: #5562E9;      /* The main purple/indigo */
+    --color-primary-light: #F0F2FF; /* The light purple for active menu bg */
+    --color-primary-hover: #4A55C6; /* A darker purple for button hover */
+    
+    /* Text Colors */
+    --text-primary: #1A202C;      /* Dark grey for headings */
+    --text-secondary: #718096;    /* Medium grey for subtext, labels */
+    --text-on-primary: #FFFFFF;     /* White text on purple buttons */
+    
+    /* Background Colors */
+    --bg-primary: #FFFFFF;        /* Main content background */
+    --bg-secondary: #F7FAFC;      /* Sidebar & off-white backgrounds */
+    
+    /* Accent & Utility Colors */
+    --border-color: #E2E8F0;      /* Light grey for borders */
+    --shadow-color: rgba(0, 0, 0, 0.05); /* Subtle shadow */
+    --accent-red: #E53E3E;        /* For problems, notifications */
+    --accent-red-light: #FFF5F5;  /* For logout hover */
+    --accent-green: #38A169;      /* For "Entry" or success */
+
+    /* [NEW] Parking Spot Colors */
+    --accent-green-light: #F0FFF4;
+    --accent-yellow: #C05621;
+    --accent-yellow-light: #FFFAF0;
+    --accent-unknown: #A0AEC0;
+    --accent-unknown-light: #F7FAFC;
+
+    /* Sizing & Spacing */
+    --spacing-xs: 0.25rem; /* 4px */
+    --spacing-sm: 0.5rem;  /* 8px */
+    --spacing-md: 1rem;    /* 16px */
+    --spacing-lg: 1.5rem;  /* 24px */
+    --spacing-xl: 2rem;    /* 32px */
+    
+    /* Borders & Shadows */
+    --radius-md: 8px;           /* For containers, inputs */
+    --radius-lg: 12px;          /* For main cards, modal */
+    --radius-full: 999px;       /* For rounded buttons */
+
+    --shadow-md: 0 4px 6px -1px var(--shadow-color), 0 2px 4px -1px var(--shadow-color);
+    --shadow-lg: 0 10px 15px -3px var(--shadow-color), 0 4px 6px -2px var(--shadow-color);
+
+    /* Layout */
+    --sidebar-width: 280px;
+}
+
+
+/* * --- [THE FIX IS HERE] ---
+ *
+ * This selector now matches the .dark class that your
+ * JavaScript adds to the <html> element.
+ */
+html.dark {
+    /* Brand Colors */
+    --color-primary: #7B85F3;      
+    --color-primary-light: #32386A; 
+    --color-primary-hover: #98A0F6;
+    
+    /* Text Colors */
+    --text-primary: #F7FAFC;      
+    --text-secondary: #A0AEC0;    
+    
+    /* Background Colors */
+    --bg-primary: #1A202C;        
+    --bg-secondary: #2D3748;      
+    
+    /* Accent & Utility Colors */
+    --border-color: #4A5568;      
+    --shadow-color: rgba(0, 0, 0, 0.2);
+    --accent-red: #FC8181;        
+    --accent-red-light: #4D2F2F;
+    --accent-green: #68D391;      
+    
+    /* [NEW] Parking Spot Colors */
+    --accent-green-light: #2F4D3C;
+    --accent-yellow: #DD6B20;
+    --accent-yellow-light: #4D382F;
+    --accent-unknown: #718096;
+    --accent-unknown-light: #2D3748;
+}
+
+
+/* 3. GLOBAL STYLES */
+
+/* This is the correct base body style.
+   It has NO padding.
+*/
+body {
+    font-family: 'Inter', sans-serif;
+    font-weight: 400; 
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased; 
+    
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* This class is added to the <body> tag ONLY on
+   pages with a sidebar (e.g., dashboard, profile).
+   It creates the space for the fixed sidebar.
+*/
+.app-layout {
+    padding-left: var(--sidebar-width); 
+}
+
+
+h1, h2, h3, .strong-text {
+    font-weight: 600; /* Semi-bold */
+}
+
+/* This class wraps the main content area
+   to the right of the sidebar.
+*/
+.main-content {
+    padding: var(--spacing-lg);
+}
+
+
+/* 4. UTILITY CLASSES (Buttons) */
+
+.btn {
+    display: inline-flex; /* Use flex for icon alignment */
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none; /* For links styled as buttons */
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    color: var(--text-on-primary);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-primary:hover {
+    background-color: var(--color-primary-hover);
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background-color: var(--border-color);
+}
+
+.btn-danger {
+    background-color: var(--accent-red-light);
+    color: var(--accent-red);
+    border: 1px solid var(--accent-red);
+}
+.btn-danger:hover {
+    background-color: var(--accent-red);
+    color: var(--text-on-primary);
+}
+
+.btn-rounded {
+    border-radius: var(--radius-full);
+}
+
+.btn-small {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.875rem; /* 14px */
+}
+
+/* 5. ACCESSIBILITY UTILITIES */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* 6. REUSABLE TABLE STYLES
+   (Used by dashboard and profile pages) 
+*/
+.history-table {
+    width: 100%;
+    border-collapse: collapse; /* Clean, modern table look */
+    font-size: 0.875rem; /* 14px */
+}
+
+.history-table th,
+.history-table td {
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.history-table th {
+    font-weight: 600;
+    font-size: 0.75rem; /* 12px */
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Hover effect for table rows */
+.history-table tbody tr:hover {
+    background-color: var(--bg-secondary);
+}
+
+/* Style for the "No history" message */
+.history-table td[colspan="4"],
+.history-table td[colspan="5"] {
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+    padding: var(--spacing-lg);
+}
+
+
+/* 7. [NEW] REUSABLE MODAL STYLES
+   (Used by booking modal) 
+*/
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    /* Add a fade-in for smoothness */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+.modal-overlay:not(.hidden) {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background-color: var(--bg-primary);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 500px;
+    z-index: 1001;
+    /* Add a zoom-in effect */
+    transform: scale(0.95);
+    transition: transform 0.2s ease;
+}
+.modal-overlay:not(.hidden) .modal-content {
+    transform: scale(1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.modal-close {
+    font-size: 1.75rem;
+    font-weight: 300;
+    line-height: 1;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+.modal-close:hover {
+    color: var(--text-primary);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end; /* Align buttons to the right */
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
+}
+
+/* * --- [NEWLY ADDED CODE] ---
+ *
+ * 8. THEME TOGGLE STYLES
+ * This provides the layout and active state
+ * for your theme buttons in the sidebar.
+ */
+.theme-toggle {
+    display: flex;
+    background-color: var(--bg-primary); /* Use --bg-primary so it changes with theme */
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xs);
+    border: 1px solid var(--border-color);
+}
+
+.theme-toggle__btn {
+    flex: 1; /* Make all buttons equal width */
+    background: none;
+    border: none;
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.theme-toggle__btn.active {
+    background-color: var(--color-primary);
+}
+
+/* Change icon color inside active button to white */
+.theme-toggle__btn.active img {
+    filter: brightness(0) invert(1);
+}
+
+/* 9. LOGO SWITCHING STYLES
+ * This toggles between light and dark logos
+ * based on the current theme.
+ */
+
+.logo-dark {
+    display: none;
+}
+
+/* By default, show the light logo */
+.logo-light {
+    display: block; /* or inline-block, depending on your layout */
+}
+
+/* When in dark mode... */
+html.dark .logo-dark {
+    display: block; /* Show the dark logo */
+}
+
+html.dark .logo-light {
+    display: none; /* Hide the light logo */
+}
+
+.sidebar__logo-img {
+    height: 32px;
+    width: 32px;
+}

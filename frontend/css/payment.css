@@ -1,0 +1,90 @@
+/* --- [PAYMENT PAGE STYLES] --- */
+
+/* 1. Page Layout
+   This creates the responsive two-column layout.
+*/
+.payment-container {
+    display: grid;
+    /* Give the form more space than the summary */
+    grid-template-columns: 1fr 1.5fr;
+    gap: var(--spacing-xl);
+    max-width: 1200px; /* Limit max width for a clean look */
+    margin: 0 auto;
+}
+
+.payment-title {
+    font-size: 1.5rem;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+}
+
+/* 2. Left Column: Booking Summary */
+.summary-card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+}
+
+.summary-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem; /* 14px */
+    color: var(--text-secondary);
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--border-color);
+}
+.summary-line:last-of-type {
+    border-bottom: none;
+}
+
+.summary-line span:last-child {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.summary-line.summary-total {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-top: 1px solid var(--border-color);
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+}
+
+.summary-line.summary-total span:last-child {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+
+/* 3. Right Column: Payment Form
+   The 'forms.css' file styles the inputs, labels, and buttons.
+   We just need to style the container.
+*/
+.payment-form-container {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+}
+
+
+/* 4. Responsiveness
+   On smaller screens, stack the columns.
+*/
+@media (max-width: 992px) {
+    .payment-container {
+        grid-template-columns: 1fr; /* Stack columns */
+    }
+
+    .payment-summary {
+        /* Move summary to the top on mobile */
+        order: 1;
+    }
+    .payment-form-container {
+        order: 2;
+    }
+}

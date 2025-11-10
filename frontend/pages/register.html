@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Account - Parking Manager</title>
+
+    <link rel="stylesheet" href="../css/fonts.css" />
+
+    <link rel="stylesheet" href="../css/style.css" />
+
+    <link rel="stylesheet" href="../css/forms.css" />
+
+    <link rel="stylesheet" href="../css/auth.css" />
+  </head>
+  <body>
+    <div class="auth-container">
+      <header class="auth-header">
+        <a href="../index.html" class="auth-logo">
+          <img
+            src="../assets/images/parking-white.png"
+            alt="Logo"
+            class="sidebar__logo-img logo-light"
+          />
+
+          <img
+            src="../assets/images/parking-black.png"
+            alt="Logo"
+            class="sidebar__logo-img logo-dark"
+          />
+          <span>Parking Manager</span>
+        </a>
+      </header>
+
+      <main class="auth-card">
+        <h1 class="auth-title">Create Your Account</h1>
+        <p class="auth-subtitle">Get started by filling out the form below.</p>
+
+        <form id="register-form" class="auth-form">
+          <div class="form-group">
+            <label for="name" class="form-label">Full Name</label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              class="form-control"
+              placeholder="e.g., John Doe"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="email" class="form-label">Email Address</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              class="form-control"
+              placeholder="you@example.com"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="phone" class="form-label"
+              >Phone Number
+              <span class="form-label-optional">(Optional)</span></label
+            >
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              class="form-control"
+              placeholder="e.g., +1 555 123 4567"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="license-plate" class="form-label"
+              >Vehicle License Plate</label
+            >
+            <input
+              type="text"
+              id="license-plate"
+              name="licensePlate"
+              class="form-control"
+              placeholder="e.g., ABC-123"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password" class="form-label">Create Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="form-control"
+              placeholder="Must be at least 8 characters"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="confirm-password" class="form-label"
+              >Confirm Password</label
+            >
+            <input
+              type="password"
+              id="confirm-password"
+              name="confirmPassword"
+              class="form-control"
+              placeholder="Re-type your password"
+              required
+            />
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-full-width">
+            Create Account
+          </button>
+
+          <p id="auth-error" class="form-error" aria-live="assertive"></p>
+        </form>
+      </main>
+
+      <footer class="auth-footer">
+        <p>Already have an account? <a href="login.html">Login</a></p>
+      </footer>
+    </div>
+    <script src="../js/main.js"></script>
+    <script src="../js/auth.js" defer></script>
+  </body>
+</html>

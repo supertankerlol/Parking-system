@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Find Parking</title>
+
+    <link rel="stylesheet" href="../css/fonts.css" />
+
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/sidebar.css" />
+    <link rel="stylesheet" href="../css/header.css" />
+    <link rel="stylesheet" href="../css/footer.css" />
+    <link rel="stylesheet" href="../css/parking-availability.css" />
+    <link rel="stylesheet" href="../css/indoor.css" />
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"
+    />
+  </head>
+  <body class="app-layout">
+    <aside id="sidebar-placeholder"></aside>
+
+    <main class="main-content">
+      <header id="header-placeholder"></header>
+
+      <div class="page-content">
+        <section id="outdoor-map-container" class="map-layer">
+          <div class="map-controls">
+            <input
+              type="search"
+              id="map-search"
+              placeholder="Search for an address..."
+            />
+            <button id="find-me-btn" aria-label="Find my location">
+              <img
+                class="icon-location-crosshairs"
+                src="../assets/icons/find_me.svg"
+              />
+            </button>
+          </div>
+          <div class="parking-window"></div>
+          <div id="google-map"></div>
+        </section>
+
+        <section id="indoor-layout-container" class="map-layer hidden">
+          <div class="indoor-header">
+            <button id="back-to-outdoor-map" class="btn btn-secondary">
+              <i class="icon-arrow-left"></i> Back to City Map
+            </button>
+            <h2 id="indoor-lot-name">Main St. Garage</h2>
+          </div>
+
+          <div class="parking-controls">
+            <nav class="floor-filter" aria-label="Parking Floors">
+              <span class="filter-label">Floor</span>
+              <div id="floor-buttons-container">
+                <button class="floor-btn active" data-floor="b1">B1</button>
+                <button class="floor-btn" data-floor="b2">B2</button>
+              </div>
+            </nav>
+            <div class="parking-stats">
+              <span class="stat-item stat-item--filled">
+                <span id="filled-count">12</span> Filled
+              </span>
+              <span class="stat-item stat-item--empty">
+                <span id="empty-count">36</span> Empty
+              </span>
+            </div>
+          </div>
+
+          <div class="parking-grid-container">
+            <div classs="parking-label label--entry">Entry</div>
+            <div class="parking-grid" id="parking-spot-grid"></div>
+            <div class="parking-label label--exit">Exit</div>
+          </div>
+        </section>
+      </div>
+      <footer id="footer-placeholder"></footer>
+    </main>
+
+    <div id="booking-modal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <header class="modal-header">
+          <h2 class="modal-title">Reserve Your Spot</h2>
+          <button
+            id="modal-close-btn"
+            class="modal-close"
+            aria-label="Close modal"
+          >
+            &times;
+          </button>
+        </header>
+
+        <form id="booking-form" class="booking-form">
+          <fieldset class="form-group">
+            <legend class="form-label">Your selected spot:</legend>
+            <span id="modal-spot-name" class="booking-spot-name">B-05</span>
+          </fieldset>
+
+          <div class="form-group">
+            <label for="start-time" class="form-label">Start Time</label>
+            <input
+              type="datetime-local"
+              id="start-time"
+              name="startTime"
+              class="form-control"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="end-time" class="form-label">End Time</label>
+            <input
+              type="datetime-local"
+              id="end-time"
+              name="endTime"
+              class="form-control"
+              required
+            />
+          </div>
+
+          <div class="booking-summary">
+            <h3 class="summary-title">Booking Summary</h3>
+            <div class="summary-line">
+              <span>Duration:</span>
+              <span id="summary-duration">--</span>
+            </div>
+            <div class="summary-line">
+              <span>Rate:</span>
+              <span id="summary-rate">$5.00/hr</span>
+            </div>
+            <div class="summary-line summary-total">
+              <span>Total Cost:</span>
+              <span id="summary-total">$0.00</span>
+            </div>
+          </div>
+
+          <p id="booking-error" class="form-error" aria-live="assertive"></p>
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              id="modal-cancel-btn"
+              class="btn btn-secondary"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              id="modal-confirm-btn"
+              class="btn btn-primary"
+            >
+              Proceed to Payment
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <!-- Google Maps API -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD43pe8Tb41lSJUUkkc5r8WlNtnbJJaygU&libraries=places"></script>
+
+    <script src="../js/parking.js"></script>
+    <script src="../js/indoor.js" defer></script>
+    <script src="../js/main.js" defer></script>
+    <script src="../js/parking-availability.js" defer></script>
+  </body>
+</html>

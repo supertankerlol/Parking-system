@@ -1,0 +1,211 @@
+/* --- [LANDING PAGE STYLES] --- */
+
+/* 1. Reusable Container */
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--spacing-lg);
+    padding-right: var(--spacing-lg);
+    box-sizing: border-box; /* Ensures padding doesn't break layout */
+}
+
+/* 2. Landing Header & Navbar */
+.landing-header {
+    width: 100%;
+    padding: var(--spacing-md) 0;
+    background-color: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar__logo {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    text-decoration: none;
+    color: var(--text-primary);
+}
+
+.navbar__logo-img {
+    height: 40px;
+    width: 40px;
+}
+
+.navbar__logo-text {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.navbar__menu {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* 3. Hero Section */
+.hero {
+    padding: var(--spacing-xl) 0;
+    background-color: var(--bg-secondary);
+}
+
+.hero__container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-xl);
+}
+
+.hero__content {
+    flex: 1; /* Take up remaining space */
+}
+
+.hero__image {
+    flex: 1;
+    display: none; /* Hidden for now */
+    /* TODO: Add a background-image or <img> here */
+    background-color: #e2e8f0;
+    height: 400px;
+    border-radius: var(--radius-lg);
+    /* Placeholder for hero image */
+    background-image: url('https://placehold.co/600x400/5562E9/FFFFFF?text=Parking+App');
+    background-size: cover;
+    background-position: center;
+}
+
+.hero__title {
+    font-size: 3rem; /* 48px */
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0 0 var(--spacing-md) 0;
+}
+
+.hero__tagline {
+    font-size: 1.125rem; /* 18px */
+    color: var(--text-secondary);
+    margin: 0 0 var(--spacing-lg) 0;
+    max-width: 500px;
+}
+
+.hero__cta-buttons {
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+/* 4. Features Section */
+.features {
+    padding: var(--spacing-xl) 0;
+}
+
+.section-title {
+    font-size: 2.25rem; /* 36px */
+    text-align: center;
+    margin: 0 0 var(--spacing-lg) 0;
+}
+
+.features__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-lg);
+}
+
+.feature-card {
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    background-color: var(--bg-primary);
+    box-shadow: var(--shadow-md);
+    text-align: center;
+}
+
+.feature-card__icon {
+    font-size: 2rem; /* Placeholder for icon */
+    color: var(--color-primary);
+    margin-bottom: var(--spacing-md);
+}
+
+.feature-card__title {
+    font-size: 1.25rem;
+    margin: 0 0 var(--spacing-sm) 0;
+}
+
+.feature-card__text {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* 5. Landing Footer */
+.landing-footer {
+    padding: var(--spacing-lg) 0;
+    background-color: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.landing-footer .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-footer__menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: var(--spacing-lg);
+}
+
+.page-footer__menu-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.875rem;
+}
+.page-footer__menu-link:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+}
+
+/* 6. Responsiveness */
+@media (max-width: 992px) {
+    .hero__container {
+        flex-direction: column;
+        text-align: center;
+    }
+    .hero__image {
+        display: block; /* Show image on smaller screens */
+        width: 100%;
+    }
+    .hero__tagline {
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .hero__cta-buttons {
+        justify-content: center;
+    }
+    .features__grid {
+        grid-template-columns: 1fr; /* Stack features */
+    }
+}
+
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+    .landing-footer .container {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+}
+

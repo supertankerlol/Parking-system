@@ -1,0 +1,527 @@
+/* ============================================
+   INDOOR PARKING LAYOUT STYLES
+   ============================================ */
+
+/* Indoor Container */
+#indoor-layout-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--bg-primary);
+    position: relative;
+}
+
+#indoor-layout-container.hidden {
+    display: none;
+}
+
+/* Indoor Header */
+.indoor-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+#back-to-outdoor-map {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.9rem;
+}
+
+#indoor-lot-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Parking Controls */
+.parking-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+}
+
+/* Floor Filter */
+.floor-filter {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.filter-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+#floor-buttons-container {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.floor-btn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 60px;
+}
+
+.floor-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--color-primary);
+}
+
+.floor-btn.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+}
+
+/* Parking Stats */
+.parking-stats {
+    display: flex;
+    gap: var(--spacing-lg);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.stat-item span:first-child {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.stat-item--filled {
+    color: #EF4444;
+}
+
+.stat-item--empty {
+    color: #10B981;
+}
+
+/* Parking Grid Container */
+.parking-grid-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xl);
+    padding: var(--spacing-xl);
+    overflow: auto;
+    background: var(--bg-secondary);
+}
+
+/* Entry/Exit Labels */
+.parking-label {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    opacity: 0.5;
+    letter-spacing: 0.5em;
+    padding: var(--spacing-lg);
+}
+
+.label--entry {
+    transform: rotate(180deg);
+}
+
+/* Parking Grid */
+.parking-grid {
+    flex: 1;
+    display: grid;
+    gap: 12px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+}
+
+/* Individual Parking Spot */
+.parking-spot {
+    aspect-ratio: 1;
+    min-width: 80px;
+    min-height: 80px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.parking-spot:not(:disabled):hover {
+    transform: scale(1.05);
+}
+
+.parking-spot:disabled {
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+/* Spot Border Container */
+.spot-border {
+    width: 100%;
+    height: 100%;
+    border: 3px solid var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px;
+    background: var(--bg-primary);
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+/* Spot Number */
+.spot-number {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+/* Spot Indicator Container */
+.spot-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    width: 100%;
+}
+
+/* Spot Circle (Status Indicator) */
+.spot-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 3px solid currentColor;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+/* Available Spot (Green) */
+.parking-spot--available .spot-border {
+    border-color: #10B981;
+}
+
+.parking-spot--available .spot-number {
+    color: #10B981;
+}
+
+.parking-spot--available .spot-circle {
+    background: #10B981;
+    color: #10B981;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+}
+
+/* Occupied Spot (Red) */
+.parking-spot--occupied .spot-border {
+    border-color: #EF4444;
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.parking-spot--occupied .spot-number {
+    color: #EF4444;
+}
+
+.parking-spot--occupied .spot-circle {
+    background: #EF4444;
+    color: #EF4444;
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Reserved Spot (Orange) */
+.parking-spot--reserved .spot-border {
+    border-color: #F59E0B;
+    background: rgba(245, 158, 11, 0.05);
+}
+
+.parking-spot--reserved .spot-number {
+    color: #F59E0B;
+}
+
+.parking-spot--reserved .spot-circle {
+    background: #F59E0B;
+    color: #F59E0B;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
+/* Selected Spot (Highlighted) */
+.parking-spot--selected .spot-border {
+    border-color: var(--color-primary);
+    border-width: 4px;
+    background: rgba(85, 98, 233, 0.1);
+    box-shadow: 0 0 20px rgba(85, 98, 233, 0.4);
+}
+
+.parking-spot--selected .spot-circle {
+    transform: scale(1.2);
+}
+
+/* Hover effect for available spots */
+.parking-spot--available:not(:disabled):hover .spot-border {
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(85, 98, 233, 0.2);
+}
+
+.parking-spot--available:not(:disabled):hover .spot-circle {
+    transform: scale(1.1);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .parking-spot {
+        min-width: 70px;
+        min-height: 70px;
+    }
+    
+    .spot-circle {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .parking-grid {
+        gap: 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .parking-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .parking-spot {
+        min-width: 60px;
+        min-height: 60px;
+    }
+    
+    .spot-number {
+        font-size: 0.75rem;
+    }
+    
+    .spot-circle {
+        width: 24px;
+        height: 24px;
+        border-width: 2px;
+    }
+    
+    .parking-grid {
+        gap: 8px;
+    }
+    
+    .parking-label {
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .parking-spot {
+        min-width: 50px;
+        min-height: 50px;
+    }
+    
+    .spot-border {
+        padding: 4px;
+        border-width: 2px;
+    }
+    
+    .spot-circle {
+        width: 20px;
+        height: 20px;
+    }
+    
+    #indoor-lot-name {
+        font-size: 1.2rem;
+    }
+}
+
+/* Booking Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: var(--spacing-lg);
+}
+
+.modal-overlay.hidden {
+    display: none;
+}
+
+/* Modal Content */
+.modal-content {
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-2xl);
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Modal Header */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.modal-close {
+    background: transparent;
+    border: none;
+    font-size: 2rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+/* Booking Form */
+.booking-form {
+    padding: var(--spacing-lg);
+}
+
+.form-group {
+    margin-bottom: var(--spacing-lg);
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+    font-size: 0.9rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: var(--spacing-md);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(85, 98, 233, 0.1);
+}
+
+.booking-spot-name {
+    display: inline-block;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    background: rgba(85, 98, 233, 0.1);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+}
+
+/* Booking Summary */
+.booking-summary {
+    background: var(--bg-secondary);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.summary-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--spacing-md) 0;
+}
+
+.summary-line {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-sm);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.summary-total {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    padding-top: var(--spacing-sm);
+    border-top: 2px solid var(--border-color);
+    margin-top: var(--spacing-sm);
+}
+
+/* Form Error */
+.form-error {
+    color: #EF4444;
+    font-size: 0.9rem;
+    margin-top: var(--spacing-sm);
+    display: none;
+}
+
+.form-error:not(:empty) {
+    display: block;
+}
+
+/* Modal Actions */
+.modal-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+.modal-actions .btn {
+    flex: 1;
+}

@@ -1,0 +1,202 @@
+/* --- [SIDEBAR COMPONENT STYLES] ---
+  This file styles the <aside class="sidebar">.
+  It uses the variables defined in 'style.css'.
+*/
+
+/* 1. Main Sidebar Container */
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh; /* Full viewport height */
+    position: fixed; /* Stays in place */
+    left: 0;
+    top: 0;
+    
+    background-color: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    
+    /* Flex column to push footer to the bottom */
+    display: flex;
+    flex-direction: column;
+    
+    /* Overall padding */
+    padding: var(--spacing-lg);
+    box-sizing: border-box; /* Ensures padding doesn't add to width */
+}
+
+/* 2. Sidebar Header (Logo) */
+.sidebar__header {
+    margin-bottom: var(--spacing-xl); /* Space below the logo */
+}
+
+.sidebar__logo-link {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    text-decoration: none;
+}
+
+.sidebar__logo-img {
+    height: 32px;
+    width: 32px;
+}
+
+.sidebar__logo-text {
+    font-size: 1.125rem; /* 18px */
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* 3. Main Navigation */
+.sidebar__nav {
+    flex-grow: 1; /* Pushes the footer down */
+}
+
+.sidebar__menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs); /* Small gap between links */
+}
+
+.sidebar__menu-link {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+/* This is the "D. Example" from your prompt,
+   applied to our class names.
+*/
+.sidebar__menu-link:hover,
+.sidebar__menu-link.sidebar__menu-link--active {
+    color: var(--color-primary);
+    background-color: var(--color-primary-light);
+}
+
+.sidebar__menu-link.sidebar__menu-link--active {
+    box-shadow: var(--shadow-md); /* Active link shadow */
+}
+
+/* Container for the three theme buttons */
+.theme-toggle {
+    display: flex;
+    justify-content: space-between; /* Space out the buttons */
+    align-items: center;
+    background-color: var(--bg-primary); /* Use main bg for contrast */
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xs);
+    margin-top: var(--spacing-md); /* Space above the logout button */
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--border-color);
+}
+
+/* Individual theme button */
+.theme-toggle__btn {
+    flex: 1; /* Make buttons share space equally */
+    background-color: transparent; /* Transparent background by default */
+    border: none;
+    padding: var(--spacing-sm) 0; /* Vertical padding, no horizontal */
+    border-radius: var(--radius-md); /* Slightly rounded inside */
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--text-secondary); /* Use secondary text color for icons */
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Style for the SVG/IMG icons inside the buttons */
+.theme-toggle__btn svg,
+.theme-toggle__btn img {
+    width: 25px;
+    height: 25px;
+    /* Use 'currentColor' so the SVG inherits the button's color */
+    fill: currentColor; 
+}
+
+/* Hover effect for inactive buttons */
+.theme-toggle__btn:not(.active):hover {
+    background-color: var(--bg-secondary); /* Use sidebar bg for hover */
+    color: var(--text-primary);
+}
+
+/* Active state for the buttons */
+.theme-toggle__btn.active {
+    background-color: var(--color-primary); /* Use primary color for active bg */
+    color: var(--text-on-primary); /* Use white text/icon color */
+    box-shadow: var(--shadow-md);
+}
+
+/* --- Logout Button Styles (Adjust margin) --- */
+.sidebar__menu-link--logout {
+    margin-top: var(--spacing-sm); /* Slightly reduce margin now that toggle is above */
+    /* ... rest of logout styles ... */
+}
+
+/* 4. Sidebar Footer (Profile & Logout) */
+.sidebar__footer {
+    /* Pushes itself to the bottom */
+    margin-top: auto; 
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--border-color);
+}
+
+.sidebar__profile {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    text-decoration: none;
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-md);
+    transition: background-color 0.2s ease;
+}
+
+.sidebar__profile:hover {
+    background-color: var(--border-color); /* Subtle hover */
+}
+
+.sidebar__avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.sidebar__user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar__user-name {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.sidebar__user-email {
+    font-size: 0.875rem; /* 14px */
+    color: var(--text-secondary);
+}
+
+.sidebar__menu-link--logout {
+    margin-top: var(--spacing-md);
+}
+
+.sidebar__menu-link--logout:hover {
+    color: var(--accent-red);
+    background-color: var(--accent-red-light);
+}
+
+/* 5. Icon Placeholder Styles (Replace with your icon library) */
+.sidebar__icon {
+    font-size: 1.25rem; /* 20px */
+    width: 20px; /* Ensures alignment */
+    text-align: center;
+}

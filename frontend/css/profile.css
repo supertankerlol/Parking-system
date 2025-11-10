@@ -1,0 +1,82 @@
+/* --- [PROFILE PAGE STYLES] --- */
+
+/* 1. Page Layout
+   This creates the responsive 2-column grid for the cards.
+*/
+.profile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+/* 2. Base Card Style */
+.profile-card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-md);
+}
+
+.card-title {
+    font-size: 1.5rem;
+    margin-top: 0;
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+/* This modifier makes a card span the full width of the grid */
+.card-full-width {
+    grid-column: 1 / -1;
+}
+
+/* 3. "My Vehicles" List Styles */
+.item-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--spacing-lg) 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.item-list-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    background-color: var(--bg-secondary);
+}
+.item-list-row span {
+    font-weight: 500;
+}
+
+/* 4. "Add New Vehicle" Form Styles */
+.add-item-form .form-label {
+    font-weight: 600;
+}
+
+.add-item-form .form-row {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+.add-item-form .form-row .form-control {
+    flex-grow: 1; /* Make the input take available space */
+}
+
+/* 5. Responsiveness */
+@media (max-width: 992px) {
+    .profile-grid {
+        /* Stack to a single column on smaller screens */
+        grid-template-columns: 1fr;
+    }
+}
