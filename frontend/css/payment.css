@@ -71,6 +71,10 @@
     padding: var(--spacing-lg);
 }
 
+.form-group:nth-child(n) {
+    margin-bottom: var(--spacing-md);
+}
+
 
 /* 4. Responsiveness
    On smaller screens, stack the columns.

@@ -470,23 +470,47 @@ function initBookingModal() {
 // Handle booking form submission
 function handleBookingSubmit(e) {
     e.preventDefault();
-    
+
     const startTime = document.getElementById('start-time').value;
     const endTime = document.getElementById('end-time').value;
     const totalCost = document.getElementById('summary-total').textContent;
-    
+
     console.log('Booking submitted:', {
         spot: selectedSpot,
         startTime,
         endTime,
         totalCost
     });
-    
-    // TODO: Send booking to backend
-    alert(`Booking confirmed for ${selectedSpot.id}\nTotal: ${totalCost}\n\nRedirecting to payment...`);
-    
-    closeBookingModal();
+
+    // Prepare booking data for payment page
+    const bookingData = {
+        lotName: currentGarageData ? currentGarageData.name : 'Main St. Garage',
+        lotAddress: currentGarageData ? currentGarageData.address : '',
+        spotId: selectedSpot ? selectedSpot.id : '',
+        floorName: currentFloor ? currentFloor.name : '',
+        startTime: startTime,
+        endTime: endTime,
+        totalCost: totalCost,
+        bookingId: generateBookingId(),
+        timestamp: new Date().toISOString()
+    };
+
+    // Store booking data in sessionStorage for payment page
+    sessionStorage.setItem('bookingData', JSON.stringify(bookingData));
+
+    console.log('Booking data saved to sessionStorage:', bookingData);
+
+    // Redirect to payment page
+    window.location.href = '../pages/payment.html';
 }
+
+// Generate a unique booking ID
+function generateBookingId() {
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 10000);
+    return `BK-${timestamp}-${random}`;
+}
+
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
