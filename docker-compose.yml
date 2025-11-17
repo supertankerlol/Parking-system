@@ -1,0 +1,12 @@
+version: '3.9'
+
+services:
+  smart-parking:
+    build: .
+    container_name: smart_parking_app
+    restart: always
+    volumes:
+      - ./app:/app
+    environment:
+      - DISPLAY=:0
+    command: ["python", "main.py"]
