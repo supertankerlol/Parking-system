@@ -1,18 +1,24 @@
-# Используем официальный Python-образ
-FROM python:3.9-slim
+# Dockerfile
+FROM python:3.11-slim
 
-# Устанавливаем зависимости
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
 RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx libglib2.0-0
+    ffmpeg libgl1 libglib2.0-0 wget gcc \
+    && rm -rf /var/lib/apt/lists/*
 
-# Рабочая директория
 WORKDIR /app
-
-# Копируем проект
-COPY ./app /app
-
-# Устанавливаем Python-зависимости
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Устанавливаем команду запуска
-CMD ["python", "main.py"]
+# copy code
+COPY cv_service.py config.yml parking_positions.json /app/
+
+# create snapshots dir
+RUN mkdir -p /data/snapshots
+VOLUME ["/data/snapshots"]
+
+ENV SHOW_WINDOW=0
+
+CMD ["python", "cv_service.py", "--config", "config.yml", "--positions", "parking_positions.json"]
