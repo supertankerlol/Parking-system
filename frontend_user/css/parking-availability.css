@@ -844,3 +844,155 @@
 .parking-window {
     scroll-behavior: smooth;
 }
+
+
+/* --- MARKER VISUALS --- */
+
+/* --- MARKER VISUALS --- */
+
+/* 1. Base style for the content inside the marker */
+.parking-marker {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Hardware acceleration to stop jitter */
+    will-change: transform, opacity;
+}
+
+/* 2. Initial State (Waiting for JS to trigger) */
+.parking-marker.ready-to-drop {
+    opacity: 0;
+    transform: translateY(-100px); /* Start high up */
+}
+
+/* 3. The Animation Definition */
+@keyframes dropBounce {
+    0% {
+        opacity: 0;
+        transform: translateY(-100px);
+        animation-timing-function: ease-in;
+    }
+    60% {
+        opacity: 1;
+        transform: translateY(0);
+        animation-timing-function: ease-out;
+    }
+    80% {
+        transform: translateY(-10px); /* Little bounce up */
+        animation-timing-function: ease-in-out;
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0); /* Settle */
+    }
+}
+
+/* 4. Active State (Applied by JS inside draw()) */
+.parking-marker.animate-drop {
+    /* "forwards" ensures it stays at the end state (0px) */
+    animation: dropBounce 0.6s forwards; 
+    /* Override the initial hidden state */
+    opacity: 1; 
+}
+
+/* --- SCALING & INTERACTION --- */
+
+/* Compact mode (Zoomed out) */
+.parking-marker.compact-mode .price {
+    display: none;
+}
+.parking-marker.compact-mode .car-icon {
+    width: 16px; /* Smaller dot */
+    height: 16px;
+    border-width: 2px;
+}
+.parking-marker.compact-mode .car-icon svg {
+    display: none; /* Hide icon in dot mode */
+}
+
+/* Hover Effects */
+.parking-marker:hover {
+    z-index: 999; 
+}
+.parking-marker:hover .car-icon {
+    transform: scale(1.1);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+/* --- MARKER STRUCTURE --- */
+
+/* 1. The Container (Handled by JS for position) */
+/* No styles needed here, JS sets position:absolute, left, top */
+
+/* 2. The Scaler (Handles Centering & Zoom) */
+.marker-scaler {
+    /* Transition for smooth zooming size changes */
+    transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    will-change: transform;
+}
+
+/* 3. The Visual Content (Handles Drop Animation) */
+.parking-marker {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    
+    /* INITIAL STATE: Hidden high in the sky */
+    opacity: 0;
+    transform: translateY(-100px);
+}
+
+/* --- ANIMATION KEYFRAMES --- */
+@keyframes dropFromSky {
+    0% {
+        opacity: 0;
+        transform: translateY(-100px);
+        animation-timing-function: ease-in;
+    }
+    60% {
+        opacity: 1;
+        transform: translateY(0);
+        animation-timing-function: ease-out;
+    }
+    75% {
+        transform: translateY(-15px); /* Bounce up */
+        animation-timing-function: ease-in-out;
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0); /* Land */
+    }
+}
+
+/* --- TRIGGER CLASS --- */
+.parking-marker.animate-drop {
+    /* 'forwards' keeps the marker at the final 0px position */
+    animation: dropFromSky 0.6s forwards;
+}
+
+/* --- HOVER & COMPACT STYLES --- */
+.parking-marker:hover {
+    z-index: 999;
+}
+.parking-marker:hover .car-icon {
+    transform: scale(1.1);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    transition: transform 0.2s;
+}
+
+/* Compact mode (Low Zoom) */
+.parking-marker.compact-mode .price {
+    display: none;
+}
+.parking-marker.compact-mode .car-icon {
+    width: 18px;
+    height: 18px;
+    border-width: 2px;
+}
+/* Hide the SVG icon inside when compact */
+.parking-marker.compact-mode .car-icon svg {
+    display: none;
+}

@@ -326,66 +326,105 @@ function createParkingMarkerHTML(price) {
     return div;
 }
 
-// Custom Overlay class for parking markers with drop animation
-// Custom Overlay class for parking markers with drop animation
+// Robust Overlay class with Zoom Scaling and One-time Animation
 class ParkingMarkerOverlay extends google.maps.OverlayView {
     constructor(position, price, spotData, map) {
         super();
         this.position = position;
         this.price = price;
         this.spotData = spotData;
-        this.div = null; // Initialize as null
+        
+        // References
+        this.container = null;
+        this.scaler = null;
+        this.content = null;
+        
+        // State
+        this.visible = false; 
         
         this.setMap(map);
     }
     
     onAdd() {
-        // Create the div only once
-        if (!this.div) {
-            this.div = createParkingMarkerHTML(this.price);
-            
-            // Add click handler
-            this.div.addEventListener('click', () => {
-                this.handleMarkerClick();
-            });
-        }
+        // 1. Container: Anchors strictly to the map coordinate
+        this.container = document.createElement('div');
+        this.container.style.position = 'absolute';
+        this.container.style.cursor = 'pointer';
+        // IMPORTANT: Start fully invisible so it doesn't flash at (0,0)
+        this.container.style.opacity = '0'; 
         
-        // Add to the overlay pane
+        // 2. Scaler: Handles Zoom in/out size
+        this.scaler = document.createElement('div');
+        this.scaler.className = 'marker-scaler'; // Hook for CSS transitions
+        this.scaler.style.transformOrigin = 'bottom center';
+
+        // 3. Content: The visual card
+        this.content = createParkingMarkerHTML(this.price);
+        
+        // Structure: Container -> Scaler -> Content
+        this.scaler.appendChild(this.content);
+        this.container.appendChild(this.scaler);
+        
+        // Add to map
         const panes = this.getPanes();
-        panes.overlayMouseTarget.appendChild(this.div);
+        panes.overlayMouseTarget.appendChild(this.container);
         
-        // Trigger drop animation after a small delay
-        setTimeout(() => {
-            if (this.div) {
-                this.div.classList.add('animate-drop');
-            }
-        }, 50);
+        // Events
+        this.container.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.handleMarkerClick();
+        });
     }
     
     draw() {
-        // Get the projection
         const overlayProjection = this.getProjection();
+        if (!overlayProjection || !this.container) return;
         
-        if (!overlayProjection || !this.div) {
-            return;
+        // --- 1. Positioning ---
+        const point = overlayProjection.fromLatLngToDivPixel(this.position);
+        if (point) {
+            this.container.style.left = point.x + 'px';
+            this.container.style.top = point.y + 'px';
         }
+
+        // --- 2. Zoom Scaling ---
+        const zoom = this.getMap().getZoom();
+        let scale = 1;
+        if (zoom >= 17) scale = 1.1;
+        else if (zoom >= 15) scale = 0.9;
+        else if (zoom >= 13) scale = 0.6;
+        else scale = 0.4;
         
-        // Convert lat/lng to pixel position
-        const position = overlayProjection.fromLatLngToDivPixel(this.position);
-        
-        if (position) {
-            // Update position - this is called on every zoom/pan
-            this.div.style.position = 'absolute';
-            this.div.style.left = position.x + 'px';
-            this.div.style.top = position.y + 'px';
-            this.div.style.transform = 'translate(-50%, -100%)';
+        if (this.scaler) {
+            this.scaler.style.transform = `translate(-50%, -100%) scale(${scale})`;
+            
+            // Toggle compact mode
+            if (zoom < 14) this.content.classList.add('compact-mode');
+            else this.content.classList.remove('compact-mode');
+        }
+
+        // --- 3. THE ANIMATION FIX ---
+        // We ensure the element is positioned (Step 1) BEFORE we turn on visibility
+        if (!this.visible) {
+            // requestAnimationFrame 1: Wait for DOM to register the 'left' and 'top' set above
+            requestAnimationFrame(() => {
+                // requestAnimationFrame 2: Wait for browser to paint that position (still invisible)
+                requestAnimationFrame(() => {
+                    if (this.container) {
+                        this.container.style.opacity = '1'; // Make container visible
+                        this.content.classList.add('animate-drop'); // Trigger the CSS animation
+                        this.visible = true;
+                    }
+                });
+            });
         }
     }
     
     onRemove() {
-        if (this.div && this.div.parentNode) {
-            this.div.parentNode.removeChild(this.div);
+        if (this.container && this.container.parentNode) {
+            this.container.parentNode.removeChild(this.container);
         }
+        this.visible = false;
     }
     
     handleMarkerClick() {
@@ -393,13 +432,7 @@ class ParkingMarkerOverlay extends google.maps.OverlayView {
         map.panTo(this.position);
         map.setZoom(17);
     }
-    
-    // Method to update position (useful for manual updates)
-    updatePosition() {
-        this.draw();
-    }
 }
-
 
 // Update parking window with cards
 function updateParkingWindow(nearbySpots) {
@@ -504,10 +537,11 @@ function highlightParkingCard(spotId) {
 
 
 // Add parking spots within radius
+// Add parking spots within radius (Smart Update)
 function addParkingSpotsInRadius(centerLat, centerLng) {
-    clearParkingMarkers();
     
-    const nearbySpots = [];
+    // 1. First, find all spots that SHOULD be visible based on current location
+    const validSpotsInRadius = [];
     
     parkingSpots.forEach((spot) => {
         const distance = calculateDistance(centerLat, centerLng, spot.lat, spot.lng);
@@ -515,30 +549,67 @@ function addParkingSpotsInRadius(centerLat, centerLng) {
         if (distance <= radiusMeters) {
             spot.distance = formatDistance(distance);
             spot.distanceMeters = distance;
-            nearbySpots.push(spot);
+            validSpotsInRadius.push(spot);
         }
     });
     
-    // Sort by distance
-    nearbySpots.sort((a, b) => a.distanceMeters - b.distanceMeters);
+    // Sort by distance (for the sidebar list)
+    validSpotsInRadius.sort((a, b) => a.distanceMeters - b.distanceMeters);
     
-    // Update parking window
-    updateParkingWindow(nearbySpots);
+    // Update the sidebar list (always update this to show correct distances)
+    updateParkingWindow(validSpotsInRadius);
     
-    // Add markers with staggered drop animation
-    nearbySpots.forEach((spot, index) => {
-        setTimeout(() => {
-            const marker = new ParkingMarkerOverlay(
-                new google.maps.LatLng(spot.lat, spot.lng),
-                spot.price,
-                spot,
-                map
-            );
-            parkingMarkers.push(marker);
-        }, index * 100); // 100ms delay between each marker for raindrop effect
+    // --- SMART MARKER MANAGEMENT START ---
+    
+    // 2. Create a Set of valid IDs for fast lookup
+    const validSpotIds = new Set(validSpotsInRadius.map(s => s.id));
+    
+    // 3. REMOVE markers that are no longer in the radius
+    // We filter the existing parkingMarkers array
+    parkingMarkers = parkingMarkers.filter(marker => {
+        const stillVisible = validSpotIds.has(marker.spotData.id);
+        
+        if (!stillVisible) {
+            marker.setMap(null); // Remove from Google Map
+            return false;        // Remove from our memory array
+        }
+        return true; // Keep marker in memory (preserving its position/state)
     });
     
-    console.log(`Found ${nearbySpots.length} parking spots within ${radiusMeters/1000}km`);
+    // 4. ADD only the NEW markers that aren't on the map yet
+    // Create a Set of IDs currently on the map
+    const existingMarkerIds = new Set(parkingMarkers.map(m => m.spotData.id));
+    
+    let delayCounter = 0; // Counter to ensure staggering only affects new items
+    
+    validSpotsInRadius.forEach((spot) => {
+        // Only create a marker if it doesn't exist yet
+        if (!existingMarkerIds.has(spot.id)) {
+            
+            // Stagger animation for NEW markers only
+            setTimeout(() => {
+                // Safety check: ensure we didn't add it in a different thread/event
+                if (existingMarkerIds.has(spot.id)) return;
+
+                const marker = new ParkingMarkerOverlay(
+                    new google.maps.LatLng(spot.lat, spot.lng),
+                    spot.price,
+                    spot,
+                    map
+                );
+                
+                parkingMarkers.push(marker);
+                existingMarkerIds.add(spot.id); // Mark as added
+                
+            }, delayCounter * 50); // 50ms delay between each new drop
+            
+            delayCounter++;
+        }
+    });
+    
+    // --- SMART MARKER MANAGEMENT END ---
+    
+    console.log(`Map updated: ${parkingMarkers.length} active markers (${delayCounter} new).`);
 }
 
 // Clear parking markers
