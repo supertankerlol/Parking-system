@@ -25,6 +25,9 @@ interface Config {
     useSSL: boolean;
     bucket: string;
   };
+  cv: {
+    secret: string;
+  };
 }
 
 // Helper function to get required env variable (throws only in non-dev)
@@ -86,6 +89,12 @@ export const config: Config = {
     secretKey: getOptionalEnv('MINIO_SECRET_KEY', 'minioadmin'),
     useSSL: getOptionalEnv('MINIO_USE_SSL', 'false').toLowerCase() === 'true',
     bucket: getOptionalEnv('MINIO_BUCKET', 'parking-system'),
+  },
+  cv: {
+    secret: getRequiredEnv(
+      'CV_SECRET',
+      'CV_SECRET is required. Please set it in your .env file.'
+    ),
   },
 };
 

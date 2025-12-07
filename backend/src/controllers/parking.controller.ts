@@ -1,5 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import * as parkingService from '../services/parking.service';
+import { config } from '../config';
+import { prisma } from '../repositories/prisma.client';
+import { emitSpotUpdate } from '../sockets/socket';
 
 /**
  * Get parking spots (list)
@@ -131,6 +134,116 @@ export async function updateSpotStatus(req: Request, res: Response, next: NextFu
       });
       return;
     }
+    next(error);
+  }
+}
+
+/**
+ * CV webhook handler
+ * POST /api/cv/events
+ * Handles computer vision events for spot status updates
+ */
+export async function postCvEvent(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    // Validate X-CV-TOKEN header
+    const token = req.headers['x-cv-token'] as string;
+    if (!token || token !== config.cv.secret) {
+      res.status(401).json({
+        message: 'Unauthorized: Invalid or missing X-CV-TOKEN',
+      });
+      return;
+    }
+
+    // Parse request body
+    const { spotId, status, timestamp, source } = req.body;
+
+    if (!spotId) {
+      res.status(400).json({
+        message: 'spotId is required',
+      });
+      return;
+    }
+
+    if (!status || !['occupied', 'free'].includes(status)) {
+      res.status(400).json({
+        message: 'status is required and must be "occupied" or "free"',
+      });
+      return;
+    }
+
+    // Get spot to verify it exists and get garageId
+    const spot = await prisma.spot.findUnique({
+      where: { id: spotId },
+      select: {
+        id: true,
+        garageId: true,
+        status: true,
+      },
+    });
+
+    if (!spot) {
+      res.status(404).json({
+        message: 'Spot not found',
+      });
+      return;
+    }
+
+    // Map CV status to spot status
+    // "occupied" -> "occupied", "free" -> "available"
+    const spotStatus = status === 'occupied' ? 'occupied' : 'available';
+    const eventTimestamp = timestamp ? new Date(timestamp) : new Date();
+    const lastSeenAt = eventTimestamp;
+
+    // Update spot status and lastSeenAt in a transaction
+    const updatedSpot = await prisma.$transaction(async (tx) => {
+      // Update spot
+      const updated = await tx.spot.update({
+        where: { id: spotId },
+        data: {
+          status: spotStatus,
+          lastSeenAt,
+        },
+      });
+
+      // Determine event type for parking history
+      const eventType = status === 'occupied' ? 'cv_detected' : 'left';
+
+      // Insert parking_history record
+      await tx.parkingHistory.create({
+        data: {
+          spotId,
+          garageId: spot.garageId,
+          eventType,
+          sourceType: 'cv',
+          metadata: {
+            source: source || 'cv_system',
+            timestamp: eventTimestamp.toISOString(),
+            previousStatus: spot.status,
+            newStatus: spotStatus,
+          },
+          timestamp: eventTimestamp,
+        },
+      });
+
+      return updated;
+    });
+
+    // Emit socket event
+    emitSpotUpdate({
+      spotId: updatedSpot.id,
+      status: updatedSpot.status,
+      lastSeenAt: updatedSpot.lastSeenAt,
+    });
+
+    res.status(200).json({
+      message: 'CV event processed successfully',
+      spot: {
+        id: updatedSpot.id,
+        status: updatedSpot.status,
+        lastSeenAt: updatedSpot.lastSeenAt,
+      },
+    });
+  } catch (error) {
     next(error);
   }
 }
