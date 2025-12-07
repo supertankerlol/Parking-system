@@ -18,6 +18,9 @@
     --text-secondary: #718096;    /* Medium grey for subtext, labels */
     --text-on-primary: #FFFFFF;     /* White text on purple buttons */
     
+    /* Icon Colors */
+    --icon-color: #1A202C;        /* Dark icons for light mode */
+    
     /* Background Colors */
     --bg-primary: #FFFFFF;        /* Main content background */
     --bg-secondary: #F7FAFC;      /* Sidebar & off-white backgrounds */
@@ -69,7 +72,10 @@ html.dark {
     
     /* Text Colors */
     --text-primary: #F7FAFC;      
-    --text-secondary: #A0AEC0;    
+    --text-secondary: #A0AEC0;
+    
+    /* Icon Colors */
+    --icon-color: #F7FAFC;        /* Light icons for dark mode */    
     
     /* Background Colors */
     --bg-primary: #1A202C;        
@@ -338,11 +344,12 @@ h1, h2, h3, .strong-text {
 
 .theme-toggle__btn.active {
     background-color: var(--color-primary);
+    color: var(--text-on-primary); /* White text/icon on active button */
 }
 
-/* Change icon color inside active button to white */
+/* Active button icons are white (handled by color: var(--text-on-primary) above) */
 .theme-toggle__btn.active img {
-    filter: brightness(0) invert(1);
+    filter: brightness(0) invert(1); /* White icon on active button */
 }
 
 /* 9. LOGO SWITCHING STYLES

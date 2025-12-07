@@ -1,0 +1,17 @@
+<svg width="200" height="60" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <!-- Parking spot icon with flow lines -->
+  <g id="icon">
+    <!-- Parking spot rectangle -->
+    <rect x="5" y="15" width="30" height="30" rx="4" fill="none" stroke="#1f2937" stroke-width="2.5"/>
+    <!-- Letter P -->
+    <path d="M 12 20 L 12 35 M 12 20 L 20 20 Q 24 20 24 24 Q 24 28 20 28 L 12 28" 
+          fill="none" stroke="#1f2937" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Flow lines -->
+    <path d="M 40 30 Q 50 25 60 30" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+    <path d="M 40 30 Q 50 35 60 30" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="60" cy="30" r="3" fill="#10b981"/>
+  </g>
+  <!-- Text -->
+  <text x="70" y="38" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" 
+        font-size="24" font-weight="600" fill="#1f2937">ParkFlow</text>
+</svg>

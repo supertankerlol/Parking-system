@@ -110,7 +110,14 @@
 #find-me-btn .icon-location-crosshairs {
     width: 20px;
     height: 20px;
-    filter: brightness(0) invert(1); /* Make icon white */
+    /* Light mode: black icon */
+    filter: brightness(0);
+}
+
+/* Dark mode: white icon */
+html.dark #find-me-btn img,
+html.dark #find-me-btn .icon-location-crosshairs {
+    filter: brightness(0) invert(1);
 }
 
 .icon-location-crosshairs {

@@ -72,6 +72,11 @@
     transition: all 0.2s ease;
 }
 
+/* Ensure icons use --icon-color consistently */
+.sidebar__menu-link .sidebar__icon {
+    color: var(--icon-color);
+}
+
 /* This is the "D. Example" from your prompt,
    applied to our class names.
 */
@@ -79,6 +84,12 @@
 .sidebar__menu-link.sidebar__menu-link--active {
     color: var(--color-primary);
     background-color: var(--color-primary-light);
+}
+
+/* Icons maintain --icon-color even on hover/active for consistency */
+.sidebar__menu-link:hover .sidebar__icon,
+.sidebar__menu-link.sidebar__menu-link--active .sidebar__icon {
+    color: var(--icon-color);
 }
 
 .sidebar__menu-link.sidebar__menu-link--active {
@@ -109,7 +120,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    color: var(--text-secondary); /* Use secondary text color for icons */
+    /* Use --icon-color for inactive icons */
+    color: var(--icon-color);
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
@@ -119,13 +131,29 @@
     width: 25px;
     height: 25px;
     /* Use 'currentColor' so the SVG inherits the button's color */
-    fill: currentColor; 
+    fill: currentColor;
+}
+
+/* Image icons in theme toggle - apply filter to match --icon-color */
+.theme-toggle__btn:not(.active) img {
+    /* Light mode: black icon */
+    filter: brightness(0);
+}
+
+/* Dark mode: white icon for inactive buttons */
+html.dark .theme-toggle__btn:not(.active) img {
+    filter: brightness(0) invert(1);
+}
+
+/* Sun icon keeps its default color in all modes */
+.theme-toggle__btn:not(.active) .icon-sun {
+    filter: none; /* Keep original sun icon color */
 }
 
 /* Hover effect for inactive buttons */
 .theme-toggle__btn:not(.active):hover {
     background-color: var(--bg-secondary); /* Use sidebar bg for hover */
-    color: var(--text-primary);
+    color: var(--icon-color); /* Keep icon color consistent */
 }
 
 /* Active state for the buttons */
@@ -133,6 +161,15 @@
     background-color: var(--color-primary); /* Use primary color for active bg */
     color: var(--text-on-primary); /* Use white text/icon color */
     box-shadow: var(--shadow-md);
+}
+
+/* Active button icons should be white */
+.theme-toggle__btn.active img {
+    filter: brightness(0) invert(1); /* White icon on active button */
+}
+
+.theme-toggle__btn.active svg {
+    color: var(--text-on-primary); /* White icon for SVG */
 }
 
 /* --- Logout Button Styles (Adjust margin) --- */
@@ -194,9 +231,38 @@
     background-color: var(--accent-red-light);
 }
 
-/* 5. Icon Placeholder Styles (Replace with your icon library) */
+/* 5. Icon Styles - Consistent theme support */
 .sidebar__icon {
     font-size: 1.25rem; /* 20px */
     width: 20px; /* Ensures alignment */
+    height: 20px; /* Fixed height for consistency */
+    display: inline-flex; /* Use flex for proper alignment */
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0; /* Prevent shrinking */
     text-align: center;
+    /* Apply icon color to SVG icons using currentColor */
+    color: var(--icon-color);
+}
+
+/* SVG icons in sidebar */
+.sidebar__icon svg {
+    width: 20px;
+    height: 20px;
+    display: block; /* Remove inline spacing */
+}
+
+/* Image icons in sidebar - apply filter to match --icon-color */
+.sidebar__icon img {
+    width: 20px;
+    height: 20px;
+    display: block; /* Remove inline spacing */
+    object-fit: contain; /* Maintain aspect ratio */
+    /* Light mode: black icon */
+    filter: brightness(0);
+}
+
+/* Dark mode: white icon */
+html.dark .sidebar__icon img {
+    filter: brightness(0) invert(1);
 }
