@@ -1,18 +1,12 @@
+import '../src/types'; // Import type definitions
 import { PrismaClient } from '@prisma/client';
-import dotenv from 'dotenv';
 
-// Load environment variables
-dotenv.config();
-
-// Use test database URL if available, otherwise use regular DATABASE_URL
-const testDatabaseUrl = process.env.DATABASE_URL_TEST || process.env.DATABASE_URL;
+// DATABASE_URL should already be set by setup.env.ts
+const testDatabaseUrl = process.env.DATABASE_URL;
 
 if (!testDatabaseUrl) {
-  throw new Error('DATABASE_URL_TEST or DATABASE_URL must be set for tests');
+  throw new Error('DATABASE_URL must be set for tests (should be set by setup.env.ts)');
 }
-
-// Override DATABASE_URL for tests to use test database
-process.env.DATABASE_URL = testDatabaseUrl;
 
 // Create a separate Prisma client for tests
 const prisma = new PrismaClient({

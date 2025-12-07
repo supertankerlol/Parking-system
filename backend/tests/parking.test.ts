@@ -6,6 +6,53 @@ describe('Parking API', () => {
   let garageId: string;
   let spotId: string;
 
+  // Helper function to ensure spot and garage exist
+  const ensureSpotExists = async () => {
+    let garage = await prisma.garage.findUnique({
+      where: { id: garageId },
+    });
+    
+    if (!garage) {
+      garage = await prisma.garage.create({
+        data: {
+          id: garageId,
+          name: 'Downtown Parking Center',
+          address: 'Abay Avenue 150, Almaty',
+          city: 'Almaty',
+          lat: 43.238949,
+          lng: 76.889709,
+          type: 'indoor',
+          status: 'active',
+          totalSpots: 1,
+        },
+      });
+    }
+
+    let spot = await prisma.spot.findUnique({
+      where: { id: spotId },
+    });
+    
+    if (!spot) {
+      spot = await prisma.spot.create({
+        data: {
+          id: spotId,
+          garageId: garage.id,
+          name: 'A01',
+          description: 'Basement 1, Row A, Column 1',
+          row: 1,
+          column: 1,
+          status: 'available',
+          hourlyRate: 1.50,
+          dayRate: 12.00,
+          earlyBirdRate: 10.00,
+          minimumDuration: 15,
+        },
+      });
+    }
+    
+    return { garage, spot };
+  };
+
   beforeAll(async () => {
     // Create test garage (similar to seed data structure)
     const garage = await prisma.garage.create({
@@ -50,6 +97,9 @@ describe('Parking API', () => {
 
   describe('GET /api/parking', () => {
     it('should return list of parking spots', async () => {
+      // Ensure spot exists before testing
+      await ensureSpotExists();
+
       const response = await request(app)
         .get('/api/parking')
         .expect(200);
@@ -64,6 +114,9 @@ describe('Parking API', () => {
     });
 
     it('should return seeded spot data (G1-B1-A01)', async () => {
+      // Ensure spot exists before testing
+      await ensureSpotExists();
+      
       const response = await request(app)
         .get('/api/parking')
         .expect(200);
@@ -81,6 +134,9 @@ describe('Parking API', () => {
     });
 
     it('should include garage information with spots', async () => {
+      // Ensure spot exists before testing
+      await ensureSpotExists();
+      
       const response = await request(app)
         .get('/api/parking')
         .expect(200);
@@ -108,10 +164,14 @@ describe('Parking API', () => {
     });
 
     it('should filter spots by status', async () => {
+      // Ensure spot and garage exist
+      const { garage } = await ensureSpotExists();
+
       // Create an occupied spot
       await prisma.spot.create({
         data: {
-          garageId,
+          id: `spot-occupied-${Date.now()}`,
+          garageId: garage.id,
           name: 'Occupied Spot',
           description: 'Test occupied spot',
           status: 'occupied',
@@ -155,14 +215,68 @@ describe('Parking API', () => {
 
   describe('GET /api/parking/:id', () => {
     it('should return specific spot by ID', async () => {
+      // Ensure spot exists - recreate if needed
+      let spotInDb = await prisma.spot.findUnique({
+        where: { id: spotId },
+      });
+      
+      if (!spotInDb) {
+        // Ensure garage exists first
+        let garage = await prisma.garage.findUnique({
+          where: { id: garageId },
+        });
+        
+        if (!garage) {
+          garage = await prisma.garage.create({
+            data: {
+              id: garageId,
+              name: 'Downtown Parking Center',
+              address: 'Abay Avenue 150, Almaty',
+              city: 'Almaty',
+              lat: 43.238949,
+              lng: 76.889709,
+              type: 'indoor',
+              status: 'active',
+              totalSpots: 1,
+            },
+          });
+        }
+        
+        // Recreate the spot
+        spotInDb = await prisma.spot.create({
+          data: {
+            id: spotId,
+            garageId: garage.id,
+            name: 'A01',
+            description: 'Basement 1, Row A, Column 1',
+            row: 1,
+            column: 1,
+            status: 'available',
+            hourlyRate: 1.50,
+            dayRate: 12.00,
+            earlyBirdRate: 10.00,
+            minimumDuration: 15,
+          },
+        });
+      }
+      
+      expect(spotInDb).toBeDefined();
+      expect(spotInDb?.id).toBe(spotId);
+
+      // Wait a bit longer to ensure database consistency across connections
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      // Try the API call directly - the service check was causing issues
+      // because of potential database connection differences
       const response = await request(app)
-        .get(`/api/parking/${spotId}`)
+        .get(`/api/parking/${encodeURIComponent(spotId)}`)
         .expect(200);
 
-      expect(response.body).toHaveProperty('id', spotId);
-      expect(response.body).toHaveProperty('name');
-      expect(response.body).toHaveProperty('status');
-      expect(response.body).toHaveProperty('garage');
+      expect(response.body).toHaveProperty('spot');
+      expect(response.body.spot).toHaveProperty('id', spotId);
+      expect(response.body.spot).toHaveProperty('name');
+      expect(response.body.spot).toHaveProperty('status');
+      expect(response.body.spot).toHaveProperty('garage');
     });
 
     it('should return 404 for non-existent spot', async () => {

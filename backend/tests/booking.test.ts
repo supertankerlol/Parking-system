@@ -1,7 +1,6 @@
 import request from 'supertest';
 import app from '../src/app';
 import { prisma } from './setup';
-import bcrypt from 'bcrypt';
 
 describe('Booking API', () => {
   let authToken: string;
@@ -11,33 +10,66 @@ describe('Booking API', () => {
 
   const testUser = {
     fullName: 'Test User',
-    email: 'test@example.com',
+    email: 'booking-test@example.com',
     password: 'password123',
     phone: '+77001234567',
   };
 
   beforeAll(async () => {
-    // Create a test user and get auth token
-    const hashedPassword = await bcrypt.hash(testUser.password, 10);
-    const user = await prisma.user.create({
-      data: {
+    // Clean up existing user if it exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: testUser.email },
+      select: { id: true },
+    });
+    
+    if (existingUser) {
+      await prisma.userProfile.deleteMany({
+        where: { userId: existingUser.id },
+      });
+      await prisma.user.deleteMany({
+        where: { email: testUser.email },
+      });
+    }
+
+    // Wait a bit to ensure deletion is complete
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // Create user via signup API to ensure consistency
+    const signupResponse = await request(app)
+      .post('/api/auth/signup')
+      .send({
         fullName: testUser.fullName,
         email: testUser.email,
-        passwordHash: hashedPassword,
-        phone: testUser.phone,
-      },
-    });
-    userId = user.id;
-
-    // Login to get token
-    const loginResponse = await request(app)
-      .post('/api/auth/login')
-      .send({
-        email: testUser.email,
         password: testUser.password,
+        phone: testUser.phone,
       });
 
-    authToken = loginResponse.body.token;
+    if (signupResponse.status !== 201) {
+      throw new Error(`Signup failed with status ${signupResponse.status}: ${JSON.stringify(signupResponse.body)}`);
+    }
+
+    userId = signupResponse.body.user.id;
+    authToken = signupResponse.body.token;
+
+    if (!authToken) {
+      // If signup didn't return a token, try logging in
+      const loginResponse = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: testUser.email,
+          password: testUser.password,
+        });
+
+      if (loginResponse.status !== 200) {
+        throw new Error(`Login failed after signup: ${JSON.stringify(loginResponse.body)}`);
+      }
+
+      authToken = loginResponse.body.token;
+    }
+
+    if (!authToken) {
+      throw new Error('Failed to obtain auth token');
+    }
 
     // Create a test garage
     const garage = await prisma.garage.create({
@@ -57,6 +89,7 @@ describe('Booking API', () => {
     // Create a test parking spot
     const spot = await prisma.spot.create({
       data: {
+        id: `spot-test-${Date.now()}`,
         garageId: garage.id,
         name: 'Test Spot 1',
         description: 'Test parking spot',
@@ -75,20 +108,79 @@ describe('Booking API', () => {
     await prisma.booking.deleteMany();
     await prisma.spot.deleteMany();
     await prisma.garage.deleteMany();
-    await prisma.user.deleteMany();
+    
+    // Clean up user and profile
+    const existingUser = await prisma.user.findUnique({
+      where: { email: testUser.email },
+      select: { id: true },
+    });
+    
+    if (existingUser) {
+      await prisma.userProfile.deleteMany({
+        where: { userId: existingUser.id },
+      });
+    }
+    
+    await prisma.user.deleteMany({
+      where: { email: testUser.email },
+    });
   });
 
   beforeEach(async () => {
-    // Reset spot status to available before each test
-    await prisma.spot.update({
-      where: { id: spotId },
-      data: { status: 'available' },
+    // Clean up any existing bookings first
+    await prisma.booking.deleteMany({}).catch(() => {});
+    
+    // Ensure garage exists - find or create
+    let garage = await prisma.garage.findUnique({
+      where: { id: garageId },
     });
+    
+    if (!garage) {
+      // Garage was deleted, recreate it
+      garage = await prisma.garage.create({
+        data: {
+          name: 'Test Garage',
+          address: '123 Test Street',
+          city: 'Test City',
+          lat: 43.238949,
+          lng: 76.889709,
+          type: 'outdoor',
+          status: 'active',
+          totalSpots: 1,
+        },
+      });
+      garageId = garage.id;
+    }
 
-    // Clean up any existing bookings
-    await prisma.booking.deleteMany({
-      where: { spotId },
+    // Ensure spot exists - find or create
+    let spot = await prisma.spot.findUnique({
+      where: { id: spotId },
     });
+    
+    if (!spot) {
+      // Spot was deleted, recreate it with the current garage
+      const newSpotId = `spot-test-${Date.now()}`;
+      spot = await prisma.spot.create({
+        data: {
+          id: newSpotId,
+          garageId: garage.id,
+          name: 'Test Spot 1',
+          description: 'Test parking spot',
+          status: 'available',
+          hourlyRate: 2.0,
+          dayRate: 15.0,
+          earlyBirdRate: 12.0,
+          minimumDuration: 15,
+        },
+      });
+      spotId = spot.id;
+    } else {
+      // Spot exists, just reset its status
+      await prisma.spot.update({
+        where: { id: spotId },
+        data: { status: 'available' },
+      });
+    }
   });
 
   describe('POST /api/bookings', () => {
@@ -202,6 +294,10 @@ describe('Booking API', () => {
     });
 
     it('should reject booking with past start time', async () => {
+      if (!authToken) {
+        throw new Error('Auth token is not set. beforeAll may have failed.');
+      }
+
       const startTime = new Date();
       startTime.setHours(startTime.getHours() - 1); // 1 hour ago
       const endTime = new Date();
@@ -221,6 +317,18 @@ describe('Booking API', () => {
     });
 
     it('should reject booking for already reserved spot', async () => {
+      if (!authToken) {
+        throw new Error('Auth token is not set. beforeAll may have failed.');
+      }
+
+      // Verify spot exists before testing
+      const spotCheck = await prisma.spot.findUnique({
+        where: { id: spotId },
+      });
+      if (!spotCheck) {
+        throw new Error(`Spot ${spotId} does not exist. beforeEach may have failed.`);
+      }
+
       // First booking
       const startTime1 = new Date();
       startTime1.setHours(startTime1.getHours() + 1);
@@ -257,6 +365,10 @@ describe('Booking API', () => {
     });
 
     it('should reject booking for non-existent spot', async () => {
+      if (!authToken) {
+        throw new Error('Auth token is not set. beforeAll may have failed.');
+      }
+
       const startTime = new Date();
       startTime.setHours(startTime.getHours() + 1);
       const endTime = new Date(startTime);

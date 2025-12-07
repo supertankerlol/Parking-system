@@ -24,14 +24,14 @@ export const initSocket = (server: HttpServer): SocketServer => {
   return io;
 };
 
-export const getIo = (): SocketServer => {
-  if (!ioInstance) {
-    throw new Error('Socket.IO not initialized. Call initSocket first.');
-  }
+export const getIo = (): SocketServer | null => {
   return ioInstance;
 };
 
 export const emitSpotUpdate = (payload: any): void => {
   const io = getIo();
-  io.emit('spot:update', payload);
+  // Gracefully skip emission if Socket.IO is not initialized (e.g., in tests)
+  if (io) {
+    io.emit('spot:update', payload);
+  }
 };

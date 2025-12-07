@@ -6,22 +6,47 @@ import bcrypt from 'bcrypt';
 describe('Auth API', () => {
   const testUser = {
     fullName: 'Test User',
-    email: 'test@example.com',
+    email: 'auth-test@example.com',
     password: 'password123',
     phone: '+77001234567',
   };
 
   beforeEach(async () => {
     // Clean up users before each test
+    // First find the user to get the ID, then delete profile if it exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: testUser.email },
+      select: { id: true },
+    });
+    
+    if (existingUser) {
+      await prisma.userProfile.deleteMany({
+        where: { userId: existingUser.id },
+      });
+    }
+    
     await prisma.user.deleteMany({
       where: {
         email: testUser.email,
       },
     });
+    // Small delay to ensure database consistency
+    await new Promise(resolve => setTimeout(resolve, 10));
   });
 
   afterEach(async () => {
     // Clean up after each test
+    const existingUser = await prisma.user.findUnique({
+      where: { email: testUser.email },
+      select: { id: true },
+    });
+    
+    if (existingUser) {
+      await prisma.userProfile.deleteMany({
+        where: { userId: existingUser.id },
+      });
+    }
+    
     await prisma.user.deleteMany({
       where: {
         email: testUser.email,
@@ -87,10 +112,29 @@ describe('Auth API', () => {
   });
 
   describe('POST /api/auth/login', () => {
-    beforeEach(async () => {
-      // Create a user for login tests
-      const hashedPassword = await bcrypt.hash(testUser.password, 10);
-      await prisma.user.create({
+  beforeEach(async () => {
+    // Clean up existing user first (including profile)
+    const existingUser = await prisma.user.findUnique({
+      where: { email: testUser.email },
+      select: { id: true },
+    });
+    
+    if (existingUser) {
+      await prisma.userProfile.deleteMany({
+        where: { userId: existingUser.id },
+      });
+    }
+    
+    await prisma.user.deleteMany({
+      where: { email: testUser.email },
+    });
+    
+    // Small delay to ensure cleanup is complete
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    // Create a user for login tests
+    const hashedPassword = await bcrypt.hash(testUser.password, 10);
+    await prisma.user.create({
         data: {
           fullName: testUser.fullName,
           email: testUser.email,
