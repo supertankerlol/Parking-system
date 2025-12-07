@@ -11,6 +11,7 @@ import bookingRoutes from './routes/booking.routes';
 import parkingRoutes from './routes/parking.routes';
 import userRoutes from './routes/user.routes';
 import cvRoutes from './routes/cv.routes';
+import { errorHandler } from './middlewares/error.middleware';
 
 const app: Application = express();
 
@@ -30,5 +31,8 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/parking', parkingRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/cv', cvRoutes);
+
+// Error handling middleware (must be last)
+app.use(errorHandler);
 
 export default app;
