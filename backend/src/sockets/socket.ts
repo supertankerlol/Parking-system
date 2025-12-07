@@ -24,14 +24,14 @@ export const initSocket = (server: HttpServer): SocketServer => {
   return io;
 };
 
-export const getSocketIO = (): SocketServer => {
+export const getIo = (): SocketServer => {
   if (!ioInstance) {
     throw new Error('Socket.IO not initialized. Call initSocket first.');
   }
   return ioInstance;
 };
 
-export const emitSpotUpdate = (data: { spotId: string; status: string; lastSeenAt?: Date | null }): void => {
-  const io = getSocketIO();
-  io.emit('spot:update', data);
+export const emitSpotUpdate = (payload: any): void => {
+  const io = getIo();
+  io.emit('spot:update', payload);
 };
