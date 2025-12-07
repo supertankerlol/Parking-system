@@ -1,4 +1,12 @@
-// js/parking.js - Google Maps Integration with Theme Support & Search Autocomplete
+/**
+ * parking.js - Google Maps Integration with Theme Support & Search Autocomplete
+ * 
+ * Depends on:
+ * - config.js (for API_BASE)
+ * - api.js (for apiFetch, isAuthenticated)
+ * - auth.js (for requireAuth - optional)
+ * - Google Maps API
+ */
 
 let map;
 let currentMapTheme = 'light';
@@ -6,7 +14,10 @@ let autocomplete;
 let markers = []; // Store markers for cleanup
 let parkingMarkers = [];
 let userLocation = null;
-let radiusMeters = 2000; // 5km radius - adjust as needed
+let radiusMeters = 2000; // 2km radius - adjust as needed
+
+// Store loaded parking spots from API
+let parkingSpots = [];
 
 // Light Mode Map Styles (Retro/Vintage warm tones)
 const lightMapStyles = [
@@ -220,59 +231,175 @@ const darkMapStyles = [
   }
 ];
 
-// Sample parking spots data (replace with real data from your backend)
-const parkingSpots = [
-    { 
-        lat: 43.207079, 
-        lng: 76.669139, 
-        price: 1.50, 
-        id: 'spot-1',
-        name: 'Outdoor surface car park',
-        address: '9 Corinthian Drive, Almaty',
-        dayRate: 12.00,
-        earlyBirdRate: 10.00
-    },
-    { 
-        lat: 43.208079, 
-        lng: 76.670139, 
-        price: 0, 
-        id: 'spot-2',
-        name: 'Free Almaty Parks',
-        address: '55 Corinthion Drive, Almaty',
-        dayRate: null,
-        earlyBirdRate: null
-    },
-    { 
-        lat: 43.206079, 
-        lng: 76.668139, 
-        price: 1.00, 
-        id: 'spot-3',
-        name: '22 Corinthian Drive (Outdoor)',
-        address: '22 Corinthian Drive, Almaty',
-        dayRate: 4.00,
-        earlyBirdRate: null
-    },
-    { 
-        lat: 43.209079, 
-        lng: 76.671139, 
-        price: 2.00, 
-        id: 'spot-4',
-        name: '22 Corinthian Drive (Indoor)',
-        address: '22 Corinthian Drive, Almaty',
-        dayRate: 8.00,
-        earlyBirdRate: 6.00
-    },
-    { 
-        lat: 43.205079, 
-        lng: 76.667139, 
-        price: 2.00, 
-        id: 'spot-5',
-        name: 'Upper Harbour Motorway',
-        address: '1 Upper Harbour Motorway, Rosedale, Almaty',
-        dayRate: 6.00,
-        earlyBirdRate: 5.00
-    },
-];
+// =========================================================================
+// API FUNCTIONS
+// =========================================================================
+
+/**
+ * Load parking spots from the backend API.
+ * @param {Object} [options] - Query options
+ * @param {number} [options.lat] - Latitude for location-based search
+ * @param {number} [options.lng] - Longitude for location-based search
+ * @param {number} [options.radius] - Radius in meters
+ * @param {string} [options.status] - Filter by status (AVAILABLE, OCCUPIED, etc.)
+ * @returns {Promise<Array>} Array of parking spots
+ */
+async function loadSpots(options = {}) {
+    try {
+        // Build query string
+        const params = new URLSearchParams();
+        if (options.lat) params.append('lat', options.lat);
+        if (options.lng) params.append('lng', options.lng);
+        if (options.radius) params.append('radius', options.radius);
+        if (options.status) params.append('status', options.status);
+        if (options.garageId) params.append('garageId', options.garageId);
+
+        const queryString = params.toString();
+        const endpoint = queryString ? `/parking?${queryString}` : '/parking';
+
+        console.log('[Parking] Loading spots from API:', endpoint);
+
+        const response = await apiFetch(endpoint);
+
+        // Handle different response formats
+        // API might return { spots: [...] } or just [...]
+        const spots = Array.isArray(response) ? response : (response.spots || response.data || []);
+
+        // Normalize spot data for the map
+        parkingSpots = spots.map(spot => ({
+            id: spot.id,
+            lat: spot.latitude || spot.lat,
+            lng: spot.longitude || spot.lng,
+            price: spot.hourlyRate || spot.price || 0,
+            name: spot.name || `Spot ${spot.spotNumber || spot.id}`,
+            address: spot.address || '',
+            dayRate: spot.dayRate || null,
+            earlyBirdRate: spot.earlyBirdRate || null,
+            status: spot.status || 'AVAILABLE',
+            garageId: spot.garageId || null,
+            floorId: spot.floorId || null,
+            spotNumber: spot.spotNumber || null
+        }));
+
+        console.log('[Parking] Loaded', parkingSpots.length, 'spots');
+
+        return parkingSpots;
+
+    } catch (error) {
+        console.error('[Parking] Failed to load spots:', error.message);
+        // Return empty array on error, don't break the UI
+        return [];
+    }
+}
+
+/**
+ * Load spots and render them on the map.
+ * @param {number} centerLat - Center latitude
+ * @param {number} centerLng - Center longitude
+ */
+async function loadAndRenderSpots(centerLat, centerLng) {
+    await loadSpots({
+        lat: centerLat,
+        lng: centerLng,
+        radius: radiusMeters
+    });
+
+    // Render the loaded spots
+    addParkingSpotsInRadius(centerLat, centerLng);
+}
+
+// =========================================================================
+// BOOKING FUNCTIONS
+// =========================================================================
+
+/**
+ * Handle booking a parking spot.
+ * Checks authentication and redirects appropriately.
+ * @param {string} spotId - The spot ID to book
+ * @param {number} price - The hourly price
+ */
+function handleBookNow(spotId, price) {
+    console.log('[Parking] Booking spot:', spotId, 'at price:', price);
+
+    // Check if user is authenticated
+    if (!isAuthenticated()) {
+        console.log('[Parking] User not authenticated, showing login prompt');
+        showLoginPrompt(spotId);
+        return;
+    }
+
+    // User is authenticated, proceed to booking
+    proceedToBooking(spotId);
+}
+
+/**
+ * Show login prompt modal or redirect to login.
+ * @param {string} spotId - The spot ID user wanted to book
+ */
+function showLoginPrompt(spotId) {
+    // Store the spot ID for after login
+    sessionStorage.setItem('pendingBookingSpotId', spotId);
+
+    // Option 1: Show a modal (if you have one)
+    const loginModal = document.getElementById('login-modal');
+    if (loginModal) {
+        loginModal.classList.remove('hidden');
+        loginModal.style.display = 'flex';
+        return;
+    }
+
+    // Option 2: Show confirmation dialog and redirect
+    const shouldLogin = confirm(
+        'You need to log in to book a parking spot.\n\nWould you like to log in now?'
+    );
+
+    if (shouldLogin) {
+        // Store current page for redirect after login
+        sessionStorage.setItem('redirectAfterLogin', window.location.href);
+        window.location.href = 'login.html';
+    }
+}
+
+/**
+ * Proceed to the booking page with spot data.
+ * @param {string} spotId - The spot ID to book
+ */
+function proceedToBooking(spotId) {
+    const spot = parkingSpots.find(s => s.id === spotId);
+
+    if (!spot) {
+        console.error('[Parking] Spot not found:', spotId);
+        alert('Parking spot not found. Please try again.');
+        return;
+    }
+
+    // Store spot data for the booking page
+    const bookingData = {
+        spotId: spot.id,
+        spotName: spot.name,
+        spotAddress: spot.address,
+        price: spot.price,
+        dayRate: spot.dayRate,
+        earlyBirdRate: spot.earlyBirdRate,
+        garageId: spot.garageId,
+        floorId: spot.floorId,
+        spotNumber: spot.spotNumber
+    };
+
+    sessionStorage.setItem('bookingSpotData', JSON.stringify(bookingData));
+
+    // Close info window if open
+    if (window.currentParkingInfoWindow) {
+        window.currentParkingInfoWindow.close();
+    }
+
+    // Redirect to booking page
+    window.location.href = `booking.html?spotId=${spotId}`;
+}
+
+// =========================================================================
+// MAP HELPER FUNCTIONS
+// =========================================================================
 
 // Calculate distance between two coordinates (Haversine formula)
 function calculateDistance(lat1, lng1, lat2, lng2) {
@@ -486,11 +613,11 @@ function createParkingCard(spot) {
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                         <circle cx="12" cy="10" r="3"/>
                     </svg>
-                    <span>${spot.distance}</span>
+                    <span>${spot.distance || 'N/A'}</span>
                 </div>
             </div>
             <div class="parking-address">
-                ${spot.address}
+                ${spot.address || 'Address not available'}
             </div>
             ${dayRateHTML || earlyBirdHTML ? `
                 <div class="parking-rates">
@@ -499,10 +626,10 @@ function createParkingCard(spot) {
             ` : ''}
         </div>
         <div class="parking-card-footer">
-            <button class="btn btn-outline btn-sm" onclick="viewParkingDetails('${spot.id}')">
+            <button class="btn btn-outline btn-sm view-details-btn" data-spot-id="${spot.id}">
                 View Details
             </button>
-            <button class="btn btn-primary btn-sm" onclick="bookParkingSpot('${spot.id}', ${spot.price})">
+            <button class="btn btn-primary btn-sm book-now-btn" data-spot-id="${spot.id}" data-price="${spot.price}">
                 Book Now
             </button>
         </div>
@@ -534,10 +661,7 @@ function highlightParkingCard(spotId) {
     }
 }
 
-
-
 // Add parking spots within radius
-// Add parking spots within radius (Smart Update)
 function addParkingSpotsInRadius(centerLat, centerLng) {
     
     // 1. First, find all spots that SHOULD be visible based on current location
@@ -609,7 +733,7 @@ function addParkingSpotsInRadius(centerLat, centerLng) {
     
     // --- SMART MARKER MANAGEMENT END ---
     
-    console.log(`Map updated: ${parkingMarkers.length} active markers (${delayCounter} new).`);
+    console.log(`[Parking] Map updated: ${parkingMarkers.length} active markers (${delayCounter} new).`);
 }
 
 // Clear parking markers
@@ -621,7 +745,7 @@ function clearParkingMarkers() {
 }
 
 // Initialize Google Map when page loads
-function initMap() {
+async function initMap() {
     const defaultCenter = { lat: 43.207079, lng: 76.669139 }; // Almaty, Kazakhstan
     const mapContainer = document.getElementById('google-map');
     
@@ -671,10 +795,44 @@ function initMap() {
     // Setup map listeners for dynamic updates
     setupMapListeners();
     
-    // Load initial parking spots
-    addParkingSpotsInRadius(defaultCenter.lat, defaultCenter.lng);
+    // Setup button click delegation
+    setupButtonHandlers();
+    
+    // Load parking spots from API and render
+    await loadAndRenderSpots(defaultCenter.lat, defaultCenter.lng);
 
-    console.log('Map initialized successfully with', currentMapTheme, 'theme');
+    console.log('[Parking] Map initialized successfully with', currentMapTheme, 'theme');
+}
+
+// Setup event delegation for button clicks
+function setupButtonHandlers() {
+    // Use event delegation on the parking window container
+    const parkingWindow = document.querySelector('.parking-window');
+    
+    if (parkingWindow) {
+        parkingWindow.addEventListener('click', (e) => {
+            // Handle "Book Now" button clicks
+            const bookBtn = e.target.closest('.book-now-btn');
+            if (bookBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                const spotId = bookBtn.dataset.spotId;
+                const price = parseFloat(bookBtn.dataset.price) || 0;
+                handleBookNow(spotId, price);
+                return;
+            }
+            
+            // Handle "View Details" button clicks
+            const detailsBtn = e.target.closest('.view-details-btn');
+            if (detailsBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                const spotId = detailsBtn.dataset.spotId;
+                viewParkingDetails(spotId);
+                return;
+            }
+        });
+    }
 }
 
 // Initialize Places Autocomplete
@@ -699,7 +857,7 @@ function initAutocomplete() {
     autocomplete.bindTo('bounds', map);
     
     // Listen for place selection
-    autocomplete.addListener('place_changed', () => {
+    autocomplete.addListener('place_changed', async () => {
         const place = autocomplete.getPlace();
         
         if (!place.geometry || !place.geometry.location) {
@@ -741,7 +899,12 @@ function initAutocomplete() {
         
         infoWindow.open(map, marker);
         
-        console.log('Place selected:', place);
+        // Load spots for the new location
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        await loadAndRenderSpots(lat, lng);
+        
+        console.log('[Parking] Place selected:', place);
     });
 }
 
@@ -751,10 +914,10 @@ function initFindMeButton() {
     
     if (!findMeBtn) return;
     
-    findMeBtn.addEventListener('click', () => {
+    findMeBtn.addEventListener('click', async () => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
-                (position) => {
+                async (position) => {
                     const pos = {
                         lat: position.coords.latitude,
                         lng: position.coords.longitude
@@ -787,10 +950,10 @@ function initFindMeButton() {
                     
                     markers.push(marker);
                     
-                    // Show nearby parking spots
-                    addParkingSpotsInRadius(pos.lat, pos.lng);
+                    // Load and show nearby parking spots
+                    await loadAndRenderSpots(pos.lat, pos.lng);
                     
-                    console.log('User location found:', pos);
+                    console.log('[Parking] User location found:', pos);
                 },
                 () => {
                     alert('Error: The Geolocation service failed.');
@@ -817,19 +980,19 @@ function setupMapListeners() {
         clearTimeout(moveTimeout);
         
         // Only update parking spots after panning (not zooming)
-        moveTimeout = setTimeout(() => {
+        moveTimeout = setTimeout(async () => {
             if (!isZooming) {
                 const center = map.getCenter();
-                addParkingSpotsInRadius(center.lat(), center.lng());
+                await loadAndRenderSpots(center.lat(), center.lng());
             }
             isZooming = false;
         }, 500);
     });
     
     // Alternatively, only update on dragend (when user stops panning)
-    map.addListener('dragend', () => {
+    map.addListener('dragend', async () => {
         const center = map.getCenter();
-        addParkingSpotsInRadius(center.lat(), center.lng());
+        await loadAndRenderSpots(center.lat(), center.lng());
     });
 }
 
@@ -853,7 +1016,7 @@ function updateMapTheme(theme) {
         map.setOptions({
             styles: shouldBeDark ? darkMapStyles : lightMapStyles
         });
-        console.log('Map theme updated to:', newTheme);
+        console.log('[Parking] Map theme updated to:', newTheme);
     }
 }
 
@@ -870,27 +1033,36 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
     }
 });
 
+// Listen for real-time spot updates via WebSocket
+window.addEventListener('spot:update', (event) => {
+    const { spotId, status, ...updates } = event.detail;
+    console.log('[Parking] Real-time spot update:', spotId, status);
+    
+    // Update local data
+    const spotIndex = parkingSpots.findIndex(s => s.id === spotId);
+    if (spotIndex !== -1) {
+        parkingSpots[spotIndex] = { ...parkingSpots[spotIndex], status, ...updates };
+        
+        // Re-render if needed
+        if (map) {
+            const center = map.getCenter();
+            addParkingSpotsInRadius(center.lat(), center.lng());
+        }
+    }
+});
+
+// =========================================================================
+// GLOBAL EXPORTS (for onclick handlers in HTML and external use)
+// =========================================================================
+
 // Book parking spot (called from info window or card)
 window.bookParkingSpot = function(spotId, price) {
-    console.log('Booking spot:', spotId, 'at price:', price);
-    
-    // Close info window if open
-    if (window.currentParkingInfoWindow) {
-        window.currentParkingInfoWindow.close();
-    }
-    
-    // You can open your booking modal here
-    // For now, just show an alert
-    alert(`Booking parking spot: ${spotId}\nPrice: $${price.toFixed(2)}/hr\n\nThis will open your booking modal.`);
-    
-    // TODO: Open your actual booking modal
-    // const modal = document.getElementById('booking-modal');
-    // modal.classList.remove('hidden');
+    handleBookNow(spotId, price);
 };
 
 // View parking details
 window.viewParkingDetails = function(spotId) {
-    console.log('Viewing details for:', spotId);
+    console.log('[Parking] Viewing details for:', spotId);
     const spot = parkingSpots.find(s => s.id === spotId);
     if (spot) {
         const position = new google.maps.LatLng(spot.lat, spot.lng);
@@ -898,21 +1070,27 @@ window.viewParkingDetails = function(spotId) {
         map.setZoom(17);
         highlightParkingCard(spotId);
     }
-     if (typeof loadIndoorLayout === 'function') {
+    if (typeof loadIndoorLayout === 'function') {
         loadIndoorLayout(spotId);
     }
 };
 
 // Toggle parking spots visibility
-window.toggleParkingSpots = function(show) {
+window.toggleParkingSpots = async function(show) {
     if (show) {
         const center = map.getCenter();
-        addParkingSpotsInRadius(center.lat(), center.lng());
+        await loadAndRenderSpots(center.lat(), center.lng());
     } else {
         clearParkingMarkers();
         updateParkingWindow([]);
     }
 };
+
+// Export functions for external use
+window.loadSpots = loadSpots;
+window.loadAndRenderSpots = loadAndRenderSpots;
+window.handleBookNow = handleBookNow;
+window.initMap = initMap;
 
 // Call initMap when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
