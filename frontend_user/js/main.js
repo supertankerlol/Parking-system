@@ -6,6 +6,11 @@
  * 3. Setting dynamic page titles.
  * 4. Handling global event listeners (like logout).
  * 5. Theme toggle functionality.
+ * 6. WebSocket connection for real-time updates.
+ * 
+ * Depends on:
+ * - config.js (optional, for SOCKET_URL)
+ * - socket-client.js (optional, for real-time updates)
  */
 
 // --- GLOBAL VARIABLES ---
@@ -26,6 +31,9 @@ document.addEventListener("DOMContentLoaded", () => {
     loadSidebar(basePath, isAdminPage);
     loadHeader(basePath);
     loadFooter(basePath);
+
+    // --- 3. INITIALIZE WEBSOCKET CONNECTION ---
+    initializeSocketConnection();
 });
 
 /**
@@ -41,6 +49,131 @@ function applyThemeOnLoad() {
     } else {
         document.documentElement.classList.remove('dark');
     }
+}
+
+/**
+ * Initialize WebSocket connection for real-time updates.
+ * Uses initSocket from socket-client.js if available.
+ */
+function initializeSocketConnection() {
+    // Check if socket-client.js is loaded
+    if (typeof initSocket !== 'function') {
+        console.log('[Main] Socket client not available, skipping real-time connection');
+        return;
+    }
+
+    // Check if user is authenticated (optional - connect anyway for public updates)
+    const hasToken = typeof getToken === 'function' ? !!getToken() : !!localStorage.getItem('authToken');
+
+    // Initialize socket with handlers
+    try {
+        initSocket(
+            // onConnect callback
+            (socket) => {
+                console.log('[Main] WebSocket connected:', socket.id);
+                
+                // Dispatch connection event
+                window.dispatchEvent(new CustomEvent('socket:connected', {
+                    detail: { socketId: socket.id }
+                }));
+            },
+            // Custom event handlers
+            {
+                // Handle spot updates - dispatch as window CustomEvent
+                'spot:update': (payload) => {
+                    console.log('[Main] Received spot:update:', payload);
+                    window.dispatchEvent(new CustomEvent('spot:update', {
+                        detail: payload
+                    }));
+                },
+                
+                // Handle booking updates
+                'booking:update': (payload) => {
+                    console.log('[Main] Received booking:update:', payload);
+                    window.dispatchEvent(new CustomEvent('booking:update', {
+                        detail: payload
+                    }));
+                },
+                
+                // Handle general notifications
+                'notification': (payload) => {
+                    console.log('[Main] Received notification:', payload);
+                    window.dispatchEvent(new CustomEvent('notification', {
+                        detail: payload
+                    }));
+                    
+                    // Optionally show notification to user
+                    if (payload.message) {
+                        showNotification(payload.message, payload.type || 'info');
+                    }
+                }
+            }
+        );
+
+        console.log('[Main] WebSocket initialization started');
+
+    } catch (error) {
+        console.error('[Main] Failed to initialize WebSocket:', error);
+    }
+}
+
+/**
+ * Show a notification to the user (toast-style).
+ * @param {string} message - Notification message
+ * @param {string} type - Notification type ('info', 'success', 'warning', 'error')
+ */
+function showNotification(message, type = 'info') {
+    // Check if there's a notification container
+    let container = document.getElementById('notification-container');
+    
+    if (!container) {
+        // Create container if it doesn't exist
+        container = document.createElement('div');
+        container.id = 'notification-container';
+        container.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        `;
+        document.body.appendChild(container);
+    }
+
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.style.cssText = `
+        padding: 12px 20px;
+        border-radius: 8px;
+        background: var(--bg-secondary, #333);
+        color: var(--text-primary, #fff);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideIn 0.3s ease;
+        max-width: 350px;
+    `;
+    notification.textContent = message;
+
+    // Add type-specific styling
+    if (type === 'success') {
+        notification.style.borderLeft = '4px solid #10B981';
+    } else if (type === 'error') {
+        notification.style.borderLeft = '4px solid #EF4444';
+    } else if (type === 'warning') {
+        notification.style.borderLeft = '4px solid #F59E0B';
+    } else {
+        notification.style.borderLeft = '4px solid #3B82F6';
+    }
+
+    container.appendChild(notification);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 5000);
 }
 
 /**
@@ -66,11 +199,8 @@ function loadSidebar(basePath, isAdminPage) {
             setActiveSidebarLink();
             addLogoutListener(isAdminPage);
             
-            // --- THIS IS THE FIX ---
-            // We moved this line here, because the theme buttons
-            // are inside the sidebar.
+            // Initialize theme toggle (buttons are inside sidebar)
             initializeThemeToggle(); 
-            // --- END OF FIX ---
         })
         .catch(error => console.error('Error loading sidebar:', error));
 }
@@ -91,9 +221,6 @@ function loadHeader(basePath) {
             headerPlaceholder.innerHTML = data;
             // Set the page title after the header is loaded
             setPageTitle();
-            
-            // --- THIS LINE WAS REMOVED FROM HERE ---
-            // initializeThemeToggle(); 
         })
         .catch(error => console.error('Error loading header:', error));
 }
@@ -179,14 +306,29 @@ function addLogoutListener(isAdminPage) {
         logoutButton.addEventListener('click', (e) => {
             e.preventDefault(); // Stop the link from trying to navigate
             
-            console.log('User logging out...');
+            console.log('[Main] User logging out...');
             
-            // In a real app, you would clear localStorage or sessionStorage here.
-            // localStorage.removeItem('userToken');
+            // Use logout function from auth.js if available
+            if (typeof logout === 'function') {
+                const loginPage = isAdminPage ? 'admin-login.html' : 'login.html';
+                logout(loginPage);
+                return;
+            }
+            
+            // Fallback: manual logout
+            // Clear token
+            if (typeof removeToken === 'function') {
+                removeToken();
+            } else {
+                localStorage.removeItem('authToken');
+            }
+            
+            // Disconnect socket
+            if (typeof disconnectSocket === 'function') {
+                disconnectSocket();
+            }
 
             // Determine the correct login page to redirect to.
-            // This assumes admin-login.html is in the /admin/ folder
-            // and login.html is in the /pages/ folder.
             const loginPage = isAdminPage ? 'admin-login.html' : 'login.html';
             
             // Redirect the user
@@ -239,7 +381,6 @@ function setTheme(theme) {
     updateToggleButtonStates(); // Update which button is active
     
     window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme } }));
-
 }
 
 /**
@@ -281,3 +422,8 @@ function updateToggleButtonStates() {
         systemBtn.classList.add('active');
     }
 }
+
+// --- EXPORTS ---
+// Export functions for external use if needed
+window.showNotification = showNotification;
+window.initializeSocketConnection = initializeSocketConnection;

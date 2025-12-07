@@ -164,12 +164,19 @@
         </form>
       </div>
     </div>
+    <!-- Core scripts in dependency order -->
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="../js/socket-client.js"></script>
+    <script src="../js/auth.js"></script>
+    
     <!-- Google Maps API -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTAHI2VO5yG60cwx16vEVje3qwW9ONwZ4&libraries=places"></script>
 
-    <script src="../js/parking.js"></script>
-    <script src="../js/indoor.js" defer></script>
+    <!-- Page-specific scripts -->
     <script src="../js/main.js" defer></script>
-    <script src="../js/parking-availability.js" defer></script>
+    <script src="../js/parking.js" defer></script>
+    <script src="../js/indoor.js" defer></script>
   </body>
 </html>
