@@ -204,6 +204,10 @@ h1, h2, h3, .strong-text {
   border-width: 0;
 }
 
+.hidden {
+  display: none !important;
+}
+
 /* 6. REUSABLE TABLE STYLES
    (Used by dashboard and profile pages) 
 */
