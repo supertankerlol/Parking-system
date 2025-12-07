@@ -1,0 +1,285 @@
+// prisma/schema.prisma
+// Parking Manager Database Schema — PostgreSQL with Prisma ORM
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ════════════════════════════════════════════════════════════
+// USER & AUTHENTICATION
+// ════════════════════════════════════════════════════════════
+
+model User {
+  id              String   @id @default(uuid())
+  fullName        String
+  email           String   @unique
+  phone           String?
+  passwordHash    String
+  avatarUrl       String?
+  defaultLicense  String?
+  role            String   @default("user") // "user" | "admin" | "owner"
+  
+  // Relations
+  bookings        Booking[]
+  payments        Payment[]
+  parkingHistory  ParkingHistory[]
+  profile         UserProfile?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([email])
+  @@index([role])
+}
+
+model UserProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  licenseNumber   String?
+  licenseExpiry   DateTime?
+  emergencyPhone  String?
+  preferences     Json? // {theme, notifications, language}
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ════════════════════════════════════════════════════════════
+// PARKING INFRASTRUCTURE
+// ════════════════════════════════════════════════════════════
+
+model Garage {
+  id              String   @id @default(uuid())
+  name            String
+  address         String
+  city            String   @default("Almaty")
+  lat             Float?
+  lng             Float?
+  type            String   @default("mixed") // "outdoor" | "indoor" | "mixed"
+  status          String   @default("active") // "active" | "closed" | "maintenance"
+  totalSpots      Int      @default(0)
+  
+  // Relations
+  floors          Floor[]
+  spots           Spot[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([city])
+  @@index([status])
+}
+
+model Floor {
+  id              String   @id @default(uuid())
+  garageId        String
+  garage          Garage   @relation(fields: [garageId], references: [id], onDelete: Cascade)
+  
+  name            String   // "B1", "B2", "1", "2", "L1", "L2"
+  label           String   // "Basement 1", "Floor 1", "Level 1"
+  rows            Int      @default(0)
+  columns         Int      @default(0)
+  totalSpots      Int      @default(0)
+  
+  // Relations
+  spots           Spot[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([garageId])
+  @@unique([garageId, name])
+}
+
+model Spot {
+  id              String   @id // e.g., "spot-1", "B1-A01", "L1-C05"
+  garageId        String
+  garage          Garage   @relation(fields: [garageId], references: [id], onDelete: Cascade)
+  
+  floorId         String?
+  floor           Floor?   @relation(fields: [floorId], references: [id], onDelete: SetNull)
+  
+  name            String   // "Spot 1", "A01", "C05"
+  description     String?
+  
+  // Grid positioning (indoor)
+  row             Int?
+  column          Int?
+  
+  // Geolocation (outdoor)
+  lat             Float?
+  lng             Float?
+  
+  // Status & occupancy
+  status          String   @default("available") // "available" | "occupied" | "reserved" | "offline" | "maintenance"
+  lastSeenAt      DateTime?
+  lastOccupiedBy  String?
+  
+  // Pricing
+  hourlyRate      Float    @default(1.50)
+  dayRate         Float    @default(12.00)
+  earlyBirdRate   Float    @default(10.00)
+  minimumDuration Int      @default(15) // minutes
+  
+  // Relations
+  bookings        Booking[]
+  history         ParkingHistory[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([garageId])
+  @@index([floorId])
+  @@index([status])
+  @@index([lastSeenAt])
+  @@unique([garageId, floorId, row, column]) // Ensure unique grid position per floor
+}
+
+// ════════════════════════════════════════════════════════════
+// BOOKINGS & RESERVATIONS
+// ════════════════════════════════════════════════════════════
+
+model Booking {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  spotId          String
+  spot            Spot     @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  
+  startTime       DateTime
+  endTime         DateTime
+  status          String   @default("pending") // "pending" | "confirmed" | "in_progress" | "completed" | "cancelled"
+  
+  // Cost tracking
+  baseCost        Float?
+  discountAmount  Float    @default(0)
+  totalCost       Float?
+  
+  // Notes
+  notes           String?
+  
+  // Relations
+  payment         Payment?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([spotId])
+  @@index([status])
+  @@index([startTime])
+}
+
+// ════════════════════════════════════════════════════════════
+// PAYMENTS & RECEIPTS
+// ════════════════════════════════════════════════════════════
+
+model Payment {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  bookingId       String   @unique
+  booking         Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  
+  amount          Float
+  currency        String   @default("KZT")
+  method          String   @default("card") // "card" | "cash" | "wallet" | "stripe"
+  
+  status          String   @default("pending") // "pending" | "processing" | "completed" | "failed" | "refunded"
+  stripeId        String?
+  
+  receiptUrl      String?
+  transactionId   String?
+  
+  paidAt          DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([bookingId])
+  @@index([status])
+}
+
+// ════════════════════════════════════════════════════════════
+// AUDIT & HISTORY
+// ════════════════════════════════════════════════════════════
+
+model ParkingHistory {
+  id              String   @id @default(uuid())
+  
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  spotId          String
+  spot            Spot     @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  
+  garageId        String
+  
+  eventType       String   // "occupied" | "left" | "booked" | "cancelled" | "completed" | "cv_detected"
+  sourceType      String   @default("manual") // "manual" | "cv" | "api" | "system"
+  
+  metadata        Json? // {camera_id, confidence, license_plate, notes}
+  
+  timestamp       DateTime @default(now())
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([userId])
+  @@index([spotId])
+  @@index([eventType])
+  @@index([timestamp])
+}
+
+// ════════════════════════════════════════════════════════════
+// ADMIN & SYSTEM
+// ════════════════════════════════════════════════════════════
+
+model AdminAudit {
+  id              String   @id @default(uuid())
+  
+  adminId         String
+  action          String   // "create_garage", "update_spot", "close_spot", "change_price", etc.
+  targetType      String   // "garage", "floor", "spot", "pricing", "user"
+  targetId        String?
+  
+  changes         Json? // {before, after}
+  reason          String?
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([adminId])
+  @@index([action])
+}
+
+model CVEvent {
+  id              String   @id @default(uuid())
+  
+  spotId          String
+  cameraId        String
+  
+  status          String   // "occupied" | "free"
+  confidence      Float    @default(0.95)
+  licensePlate    String?
+  
+  imageUrl        String?
+  timestamp       DateTime
+  
+  processed       Boolean  @default(false)
+  processedAt     DateTime?
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([spotId])
+  @@index([cameraId])
+  @@index([timestamp])
+}
