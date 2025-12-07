@@ -1,0 +1,129 @@
+<aside class="sidebar">
+  <header class="sidebar__header">
+    <a href="../index.html" class="sidebar__logo-link">
+      <img
+        src="../assets/images/parking-white.png"
+        alt="Logo"
+        class="sidebar__logo-img logo-light" 
+      />
+      
+      <img
+        src="../assets/images/parking-black.png"
+        alt="Logo"
+        class="sidebar__logo-img logo-dark"
+      />
+      <span class="sidebar__logo-text">Parking Manager</span>
+    </a>
+  </header>
+
+  <nav class="sidebar__nav">
+    <ul class="sidebar__menu">
+      <li class="sidebar__menu-item">
+        <a href="../pages/user-dashboard.html" class="sidebar__menu-link">
+          <svg
+            class="sidebar__icon icon-dashboard"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+            <g
+              id="SVGRepo_tracerCarrier"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            ></g>
+            <g id="SVGRepo_iconCarrier">
+              <path
+                d="M12 12C12 11.4477 12.4477 11 13 11H19C19.5523 11 20 11.4477 20 12V19C20 19.5523 19.5523 20 19 20H13C12.4477 20 12 19.5523 12 19V12Z"
+                stroke="#000000"
+                stroke-width="2"
+                stroke-linecap="round"
+              ></path>
+              <path
+                d="M4 5C4 4.44772 4.44772 4 5 4H8C8.55228 4 9 4.44772 9 5V19C9 19.5523 8.55228 20 8 20H5C4.44772 20 4 19.5523 4 19V5Z"
+                stroke="#000000"
+                stroke-width="2"
+                stroke-linecap="round"
+              ></path>
+              <path
+                d="M12 5C12 4.44772 12.4477 4 13 4H19C19.5523 4 20 4.44772 20 5V7C20 7.55228 19.5523 8 19 8H13C12.4477 8 12 7.55228 12 7V5Z"
+                stroke="#000000"
+                stroke-width="2"
+                stroke-linecap="round"
+              ></path>
+            </g>
+          </svg>
+          <span class="sidebar__text">Dashboard</span>
+        </a>
+      </li>
+      <li class="sidebar__menu-item">
+        <a href="../pages/parking-availability.html" class="sidebar__menu-link">
+          <img
+            class="sidebar__icon icon-parking"
+            src="../assets/icons/map.svg"
+          />
+          <span class="sidebar__text">Parking Map</span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+  <div class="theme-toggle">
+    <button
+      id="theme-light"
+      class="theme-toggle__btn"
+      aria-label="Switch to light mode"
+    >
+      <img
+        class="icon-sun"
+        src="../assets/icons/sun.svg"
+        alt=""
+        width="25px"
+        height="25px"
+      />
+    </button>
+    <button
+      id="theme-dark"
+      class="theme-toggle__btn"
+      aria-label="Switch to dark mode"
+    >
+      <img
+        class="icon-moon"
+        src="../assets/icons/moon.svg"
+        alt=""
+        width="25px"
+        height="25px"
+      />
+    </button>
+    <button
+      id="theme-system"
+      class="theme-toggle__btn"
+      aria-label="Switch to system preference"
+    >
+      <img
+        class="icon-system"
+        src="../assets/icons/system.svg"
+        alt=""
+        width="25px"
+        height="25px"
+      />
+    </button>
+  </div>
+  <footer class="sidebar__footer">
+    <a href="../pages/user-profile.html" class="sidebar__profile">
+      <img
+        src="../assets/images/user.png"
+        alt="User Avatar"
+        class="sidebar__avatar"
+      />
+      <div class="sidebar__user-info">
+        <span class="sidebar__user-name">Guy Hawkins</span>
+        <span class="sidebar__user-email">Guyh@gmail.com</span>
+      </div>
+    </a>
+
+    <a href="#" class="sidebar__menu-link sidebar__menu-link--logout">
+      <i class="sidebar__icon icon-logout"></i>
+      <span class="sidebar__text">Logout</span>
+    </a>
+  </footer>
+</aside>

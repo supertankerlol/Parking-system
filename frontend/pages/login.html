@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale-1.0" />
+    <title>Login - Parking Manager</title>
+
+    <link rel="stylesheet" href="../css/fonts.css" />
+
+    <link rel="stylesheet" href="../css/style.css" />
+
+    <link rel="stylesheet" href="../css/forms.css" />
+
+    <link rel="stylesheet" href="../css/auth.css" />
+  </head>
+  <body>
+    <div class="auth-container">
+      <header class="auth-header">
+        <a href="../index.html" class="auth-logo">
+          <img
+            src="../assets/images/parking-white.png"
+            alt="Logo"
+            class="sidebar__logo-img logo-light"
+          />
+
+          <img
+            src="../assets/images/parking-black.png"
+            alt="Logo"
+            class="sidebar__logo-img logo-dark"
+          />
+          <span>Parking Manager</span>
+        </a>
+      </header>
+
+      <main class="auth-card">
+        <h1 class="auth-title">Welcome Back!</h1>
+        <p class="auth-subtitle">Please log in to access your account.</p>
+
+        <form id="login-form" class="auth-form">
+          <div class="form-group">
+            <label for="email" class="form-label">Email Address</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              class="form-control"
+              placeholder="you@example.com"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password" class="form-label">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="form-control"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+
+          <div class="form-options">
+            <a href="#" class="form-link">Forgot password?</a>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-full-width">
+            Login
+          </button>
+
+          <p id="auth-error" class="form-error" aria-live="assertive"></p>
+        </form>
+      </main>
+
+      <footer class="auth-footer">
+        <p>Don't have an account? <a href="register.html">Sign Up</a></p>
+      </footer>
+    </div>
+
+    <script src="../js/main.js"></script>
+    <script src="../js/auth.js" defer></script>
+  </body>
+</html>

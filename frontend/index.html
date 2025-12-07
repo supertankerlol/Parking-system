@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Parking Manager - Smart Parking Solutions</title>
+
+    <link rel="stylesheet" href="css/fonts.css" />
+
+    <link rel="stylesheet" href="css/style.css" />
+
+    <link rel="stylesheet" href="css/landing-page.css" />
+  </head>
+  <body>
+    <header class="landing-header">
+      <div class="container">
+        <nav class="navbar">
+          <a href="index.html" class="navbar__logo">
+            <img
+              src="./assets/images/parking-white.png"
+              alt="Logo"
+              class="sidebar__logo-img logo-light"
+            />
+
+            <img
+              src="./assets/images/parking-black.png"
+              alt="Logo"
+              class="sidebar__logo-img logo-dark"
+            />
+            <span class="navbar__logo-text">Parking Manager</span>
+          </a>
+
+          <ul class="navbar__menu">
+            <li class="navbar__menu-item">
+              <a href="pages/login.html" class="btn btn-secondary">Login</a>
+            </li>
+            <li class="navbar__menu-item">
+              <a href="pages/register.html" class="btn btn-primary">Sign Up</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="container hero__container">
+          <div class="hero__content">
+            <h1 class="hero__title">Smart Parking Management System</h1>
+            <p class="hero__tagline">
+              Find, reserve, and pay for parking instantly. No more circling the
+              block.
+            </p>
+            <div class="hero__cta-buttons">
+              <a href="pages/register.html" class="btn btn-primary btn-large"
+                >Get Started</a
+              >
+              <a
+                href="pages/parking-availability.html"
+                class="btn btn-secondary btn-large"
+                >View Map</a
+              >
+            </div>
+          </div>
+          <div class="hero__image"></div>
+        </div>
+      </section>
+
+      <section class="features">
+        <div class="container">
+          <h2 class="section-title">Why Choose Us?</h2>
+          <div class="features__grid">
+            <article class="feature-card">
+              <i class="feature-card__icon icon-realtime"></i>
+              <h3 class="feature-card__title">Real-Time Availability</h3>
+              <p class="feature-card__text">
+                See open spots on a live map before you even arrive.
+              </p>
+            </article>
+
+            <article class="feature-card">
+              <i class="feature-card__icon icon-easy-booking"></i>
+              <h3 class="feature-card__title">Easy Booking</h3>
+              <p class="feature-card__text">
+                Reserve your favorite spot in just a few clicks.
+              </p>
+            </article>
+
+            <article class="feature-card">
+              <i class="feature-card__icon icon-secure-payment"></i>
+              <h3 class="feature-card__title">Secure Payment</h3>
+              <p class="feature-card__text">
+                Pay securely in-app. No cash or machines needed.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      document.getElementById("copyright-year").textContent =
+        new Date().getFullYear();
+    </script>
+    <script src="./js/main.js"></script>
+  </body>
+</html>
