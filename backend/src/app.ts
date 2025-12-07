@@ -16,7 +16,14 @@ import { errorHandler } from './middlewares/error.middleware';
 const app: Application = express();
 
 // Middleware
-app.use(cors());
+// CORS configuration - allow frontend origins with credentials
+const corsOptions: cors.CorsOptions = {
+  origin: process.env.NODE_ENV === 'production'
+    ? ['http://localhost:3000'] // Add your production frontend URL here
+    : true, // Allow all origins in development
+  credentials: true, // Allow cookies and auth headers
+};
+app.use(cors(corsOptions));
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
