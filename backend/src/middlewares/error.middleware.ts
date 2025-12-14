@@ -5,6 +5,7 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 interface ErrorWithStatus extends Error {
   status?: number;
   statusCode?: number;
+  code?: string;
 }
 
 export const errorHandler = (
@@ -18,18 +19,20 @@ export const errorHandler = (
 
   // Get status code (check both status and statusCode properties)
   const statusCode = err.status || err.statusCode || 500;
+  
+  // Get error code for frontend handling
+  const errorCode = err.code || 'INTERNAL_ERROR';
 
-  // Prepare response based on environment
+  // Prepare response
+  const response: { message: string; code: string; error?: string } = {
+    message: err.message || 'Internal Server Error',
+    code: errorCode,
+  };
+
+  // In development: add error details
   if (isDevelopment) {
-    // In development: return message and error details
-    res.status(statusCode).json({
-      message: err.message || 'Internal Server Error',
-      error: err.message,
-    });
-  } else {
-    // In production: return only message
-    res.status(statusCode).json({
-      message: err.message || 'Internal Server Error',
-    });
+    response.error = err.message;
   }
+
+  res.status(statusCode).json(response);
 };

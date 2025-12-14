@@ -122,17 +122,20 @@
         if (!response.ok) {
             // Try to parse error message from response
             let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            let errorCode = 'UNKNOWN_ERROR';
             
             try {
                 const errorData = await response.json();
                 // Support common error response formats
                 errorMessage = errorData.message || errorData.error || errorData.msg || errorMessage;
+                errorCode = errorData.code || errorCode;
             } catch {
                 // Response wasn't JSON, use default message
             }
 
             const error = new Error(errorMessage);
             error.status = response.status;
+            error.code = errorCode;
             error.response = response;
             throw error;
         }

@@ -1,6 +1,7 @@
 import { prisma } from '../repositories/prisma.client';
 import { hashPassword, comparePassword } from '../utils/hash';
 import { generateToken } from '../utils/token';
+import { UnauthorizedError, ConflictError, NotFoundError } from '../utils/errors';
 
 // Types
 interface SignupInput {
@@ -48,7 +49,7 @@ export async function signup(input: SignupInput): Promise<UserWithoutPassword> {
   });
 
   if (existingUser) {
-    throw new Error('Email already exists');
+    throw ConflictError('An account with this email already exists', 'EMAIL_EXISTS');
   }
 
   // Hash the password
@@ -94,14 +95,14 @@ export async function login(input: LoginInput): Promise<LoginResponse> {
   });
 
   if (!user) {
-    throw new Error('Invalid email or password');
+    throw NotFoundError('No account found with this email address', 'USER_NOT_FOUND');
   }
 
   // Compare password
   const isPasswordValid = await comparePassword(password, user.passwordHash);
 
   if (!isPasswordValid) {
-    throw new Error('Invalid email or password');
+    throw UnauthorizedError('Incorrect password', 'INVALID_PASSWORD');
   }
 
   // Generate JWT token

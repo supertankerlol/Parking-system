@@ -138,6 +138,131 @@
     }
 
     // =========================================================================
+    // ERROR MESSAGE HELPERS
+    // =========================================================================
+
+    /**
+     * Get user-friendly error message for login errors
+     * @param {Error} error - The error object from API
+     * @returns {Object} Object with message and optional link
+     */
+    function getLoginErrorMessage(error) {
+        const code = error.code || 'UNKNOWN_ERROR';
+        const status = error.status || 500;
+
+        switch (code) {
+            case 'USER_NOT_FOUND':
+                return {
+                    message: "No account found with this email.",
+                    suggestion: "Don't have an account?",
+                    linkText: "Sign up here",
+                    linkUrl: "register.html"
+                };
+            case 'INVALID_PASSWORD':
+                return {
+                    message: "Password is not correct. Please try again."
+                };
+            default:
+                // Handle by status code for fallback
+                if (status === 401) {
+                    return { message: "Invalid email or password. Please try again." };
+                } else if (status === 400) {
+                    return { message: error.message || "Please check your input and try again." };
+                } else if (status >= 500) {
+                    return { message: "Server error. Please try again later." };
+                }
+                return { message: error.message || "Login failed. Please try again." };
+        }
+    }
+
+    /**
+     * Get user-friendly error message for registration errors
+     * @param {Error} error - The error object from API
+     * @returns {Object} Object with message and optional link
+     */
+    function getRegisterErrorMessage(error) {
+        const code = error.code || 'UNKNOWN_ERROR';
+        const status = error.status || 500;
+
+        switch (code) {
+            case 'EMAIL_EXISTS':
+                return {
+                    message: "An account with this email already exists.",
+                    suggestion: "Already have an account?",
+                    linkText: "Log in here",
+                    linkUrl: "login.html"
+                };
+            default:
+                // Handle by status code for fallback
+                if (status === 409) {
+                    return {
+                        message: "This email is already registered.",
+                        suggestion: "Already have an account?",
+                        linkText: "Log in here",
+                        linkUrl: "login.html"
+                    };
+                } else if (status === 400) {
+                    return { message: error.message || "Please check your input and try again." };
+                } else if (status >= 500) {
+                    return { message: "Server error. Please try again later." };
+                }
+                return { message: error.message || "Registration failed. Please try again." };
+        }
+    }
+
+    /**
+     * Display error message with optional suggestion link
+     * @param {HTMLElement} errorEl - The error element to display in
+     * @param {Object} errorInfo - Error info from getLoginErrorMessage/getRegisterErrorMessage
+     */
+    function displayAuthError(errorEl, errorInfo) {
+        if (!errorEl) {
+            console.warn('[Auth] Error element not found');
+            return;
+        }
+
+        // Clear existing content
+        errorEl.innerHTML = '';
+
+        // Create message span
+        const messageSpan = document.createElement('span');
+        messageSpan.textContent = errorInfo.message;
+        errorEl.appendChild(messageSpan);
+
+        // Add suggestion and link if provided
+        if (errorInfo.suggestion && errorInfo.linkText && errorInfo.linkUrl) {
+            const suggestionSpan = document.createElement('span');
+            suggestionSpan.textContent = ' ' + errorInfo.suggestion + ' ';
+            errorEl.appendChild(suggestionSpan);
+
+            const link = document.createElement('a');
+            link.href = errorInfo.linkUrl;
+            link.textContent = errorInfo.linkText;
+            link.style.color = 'inherit';
+            link.style.textDecoration = 'underline';
+            link.style.fontWeight = '600';
+            errorEl.appendChild(link);
+        }
+
+        // Make the error element visible
+        errorEl.classList.add('visible');
+    }
+
+    // =========================================================================
+    // VALIDATION HELPERS
+    // =========================================================================
+
+    /**
+     * Validate email format
+     * @param {string} email - Email to validate
+     * @returns {boolean} True if valid
+     */
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    // =========================================================================
     // FORM HANDLERS
     // =========================================================================
 
@@ -154,15 +279,30 @@
         const originalButtonText = submitButton ? submitButton.textContent : 'Login';
 
         // Clear previous errors
-        if (errorEl) errorEl.textContent = '';
+        if (errorEl) {
+            errorEl.textContent = '';
+            errorEl.innerHTML = '';
+            errorEl.classList.remove('visible');
+        }
 
         // Get form data
         const email = form.email.value.trim();
         const password = form.password.value;
 
-        // Basic validation
+        // Client-side validation
         if (!email || !password) {
-            if (errorEl) errorEl.textContent = 'Please enter email and password.';
+            if (errorEl) {
+                errorEl.textContent = 'Please enter email and password.';
+                errorEl.classList.add('visible');
+            }
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            if (errorEl) {
+                errorEl.textContent = 'Please enter a valid email address.';
+                errorEl.classList.add('visible');
+            }
             return;
         }
 
@@ -191,8 +331,10 @@
             }
 
         } catch (error) {
-            console.error('[Auth] Login failed:', error.message);
-            if (errorEl) errorEl.textContent = error.message;
+            console.error('[Auth] Login failed:', error.message, 'Code:', error.code);
+            const errorInfo = getLoginErrorMessage(error);
+            console.log('[Auth] Displaying error:', errorInfo);
+            displayAuthError(errorEl, errorInfo);
         } finally {
             if (submitButton) {
                 submitButton.disabled = false;
@@ -214,7 +356,11 @@
         const originalButtonText = submitButton ? submitButton.textContent : 'Create Account';
 
         // Clear previous errors
-        if (errorEl) errorEl.textContent = '';
+        if (errorEl) {
+            errorEl.textContent = '';
+            errorEl.innerHTML = '';
+            errorEl.classList.remove('visible');
+        }
 
         // Get form data
         const fullName = form.name ? form.name.value.trim() : (form.fullName ? form.fullName.value.trim() : '');
@@ -225,18 +371,51 @@
         const licensePlate = form.licensePlate ? form.licensePlate.value.trim() : '';
 
         // Client-side validation
-        if (!fullName || !email || !password) {
-            if (errorEl) errorEl.textContent = 'Please fill in all required fields.';
+        if (!fullName) {
+            if (errorEl) {
+                errorEl.textContent = 'Please enter your full name.';
+                errorEl.classList.add('visible');
+            }
             return;
         }
 
-        if (password !== confirmPassword) {
-            if (errorEl) errorEl.textContent = 'Passwords do not match.';
+        if (!email) {
+            if (errorEl) {
+                errorEl.textContent = 'Please enter your email address.';
+                errorEl.classList.add('visible');
+            }
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            if (errorEl) {
+                errorEl.textContent = 'Please enter a valid email address.';
+                errorEl.classList.add('visible');
+            }
+            return;
+        }
+
+        if (!password) {
+            if (errorEl) {
+                errorEl.textContent = 'Please enter a password.';
+                errorEl.classList.add('visible');
+            }
             return;
         }
 
         if (password.length < 8) {
-            if (errorEl) errorEl.textContent = 'Password must be at least 8 characters long.';
+            if (errorEl) {
+                errorEl.textContent = 'Password must be at least 8 characters long.';
+                errorEl.classList.add('visible');
+            }
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            if (errorEl) {
+                errorEl.textContent = 'Passwords do not match.';
+                errorEl.classList.add('visible');
+            }
             return;
         }
 
@@ -257,17 +436,13 @@
 
             console.log('[Auth] Registration successful:', response.user);
 
-            // Option 1: Auto-login and redirect to dashboard
+            // Auto-login and redirect to dashboard
             window.location.href = 'user-dashboard.html';
 
-            // Option 2: Redirect to login page (uncomment if preferred)
-            // alert('Registration successful! Please log in to continue.');
-            // removeToken(); // Don't auto-login
-            // window.location.href = 'login.html';
-
         } catch (error) {
-            console.error('[Auth] Registration failed:', error.message);
-            if (errorEl) errorEl.textContent = error.message;
+            console.error('[Auth] Registration failed:', error.message, 'Code:', error.code);
+            const errorInfo = getRegisterErrorMessage(error);
+            displayAuthError(errorEl, errorInfo);
         } finally {
             if (submitButton) {
                 submitButton.disabled = false;
