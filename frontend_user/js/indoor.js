@@ -54,7 +54,10 @@
             showLoadingState();
 
             // Call the backend API
-            const garage = await apiFetch(`/parking/garage/${garageId}`);
+            const response = await apiFetch(`/parking/garage/${garageId}`);
+            
+            // Handle response format - API returns { garage: {...} }
+            const garage = response?.garage || response;
 
             if (!garage) {
                 console.error('[Indoor] No data returned for garage:', garageId);

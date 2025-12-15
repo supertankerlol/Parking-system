@@ -77,19 +77,32 @@ async function loadSpots(options = {}) {
 
         // Normalize spot data for the map
         parkingSpots = spots.map(spot => {
+            // For indoor spots, use garage coordinates as fallback
+            // Indoor spots have row/column but no lat/lng
+            const garage = spot.garage || {};
+            const spotLat = spot.latitude || spot.lat || garage.lat;
+            const spotLng = spot.longitude || spot.lng || garage.lng;
+            
+            // Skip spots without valid coordinates
+            if (!spotLat || !spotLng || isNaN(spotLat) || isNaN(spotLng)) {
+                console.warn('[Parking] Spot missing coordinates:', spot.id, { spotLat, spotLng, garage });
+            }
+            
             const normalized = {
                 id: spot.id,
-                lat: spot.latitude || spot.lat,
-                lng: spot.longitude || spot.lng,
+                lat: spotLat,
+                lng: spotLng,
                 price: spot.hourlyRate || spot.price || 0,
-                name: spot.name || `Spot ${spot.spotNumber || spot.id}`,
-                address: spot.address || '',
+                name: spot.name || garage.name || `Spot ${spot.spotNumber || spot.id}`,
+                address: spot.address || garage.address || '',
                 dayRate: spot.dayRate || null,
                 earlyBirdRate: spot.earlyBirdRate || null,
                 status: spot.status || 'AVAILABLE',
                 garageId: spot.garageId || null,
                 floorId: spot.floorId || null,
-                spotNumber: spot.spotNumber || null
+                spotNumber: spot.spotNumber || null,
+                garageName: garage.name || null,
+                garageType: garage.type || null
             };
             return normalized;
         });
@@ -108,13 +121,43 @@ async function loadSpots(options = {}) {
  * Load spots and render them on the map.
  * @param {number} centerLat - Center latitude
  * @param {number} centerLng - Center longitude
+ * @param {boolean} [autoCenter=false] - If true and no spots in radius, center on first spot
  */
-async function loadAndRenderSpots(centerLat, centerLng) {
+async function loadAndRenderSpots(centerLat, centerLng, autoCenter = false) {
+    // API expects radius in kilometers, convert from meters
+    const radiusKm = radiusMeters / 1000;
+    
     await loadSpots({
         lat: centerLat,
         lng: centerLng,
-        radius: radiusMeters
+        radius: radiusKm
     });
+
+    // If autoCenter is enabled and we have spots, check if any are in radius
+    if (autoCenter && parkingSpots.length > 0) {
+        const spotsInRadius = parkingSpots.filter(spot => {
+            const distance = calculateDistance(centerLat, centerLng, spot.lat, spot.lng);
+            return distance <= radiusMeters;
+        });
+        
+        // If no spots in radius, fly to the first spot's location
+        if (spotsInRadius.length === 0 && parkingSpots[0].lat && parkingSpots[0].lng) {
+            console.log('[Parking] No spots in radius, centering on first parking spot');
+            const firstSpot = parkingSpots[0];
+            
+            map.flyTo({
+                center: [firstSpot.lng, firstSpot.lat],
+                zoom: 14,
+                duration: 1500
+            });
+            
+            // Re-render with new center after fly completes
+            map.once('moveend', () => {
+                addParkingSpotsInRadius(firstSpot.lat, firstSpot.lng);
+            });
+            return;
+        }
+    }
 
     // Render the loaded spots
     addParkingSpotsInRadius(centerLat, centerLng);
@@ -261,6 +304,20 @@ function createParkingMarkerElement(price) {
  * Create a Mapbox marker for a parking spot
  */
 function createParkingMarker(spot) {
+    // Validate coordinates before creating marker
+    if (!spot.lat || !spot.lng || isNaN(spot.lat) || isNaN(spot.lng)) {
+        console.error('[Parking] Cannot create marker - invalid coordinates:', spot.id, { lat: spot.lat, lng: spot.lng });
+        return null;
+    }
+    
+    // Validate coordinate ranges
+    if (spot.lat < -90 || spot.lat > 90 || spot.lng < -180 || spot.lng > 180) {
+        console.error('[Parking] Cannot create marker - coordinates out of range:', spot.id, { lat: spot.lat, lng: spot.lng });
+        return null;
+    }
+    
+    console.log('[Parking] Creating marker for spot:', spot.id, 'at', [spot.lng, spot.lat]);
+    
     const el = createParkingMarkerElement(spot.price);
     
     // Create the marker
@@ -284,12 +341,12 @@ function createParkingMarker(spot) {
         });
     });
     
-    // Trigger drop animation
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
+    // Trigger drop animation - use double rAF to ensure element is in DOM
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
             el.classList.add('animate-drop');
-                });
-            });
+        });
+    });
     
     return marker;
 }
@@ -408,6 +465,12 @@ function addParkingSpotsInRadius(centerLat, centerLng) {
     const validSpotsInRadius = [];
     
     parkingSpots.forEach((spot) => {
+        // Skip spots without valid coordinates
+        if (!spot.lat || !spot.lng || isNaN(spot.lat) || isNaN(spot.lng)) {
+            console.warn('[Parking] Skipping spot without valid coordinates:', spot.id);
+            return;
+        }
+        
         const distance = calculateDistance(centerLat, centerLng, spot.lat, spot.lng);
         
         if (distance <= radiusMeters) {
@@ -450,9 +513,18 @@ function addParkingSpotsInRadius(centerLat, centerLng) {
 
                 try {
                     const marker = createParkingMarker(spot);
+                    
+                    // Skip if marker creation failed (invalid coordinates)
+                    if (!marker) {
+                        console.warn('[Parking] Skipping spot with invalid marker:', spot.id);
+                        return;
+                    }
+                    
                     marker.addTo(map);
                     parkingMarkers.push(marker);
                     existingMarkerIds.add(spot.id);
+                    
+                    console.log('[Parking] Marker added for spot:', spot.id);
                 } catch (error) {
                     console.error('[Parking] Marker creation failed:', error);
                 }
@@ -554,8 +626,8 @@ async function initMap() {
     // Setup button click delegation
     setupButtonHandlers();
     
-    // Load parking spots from API and render
-        await loadAndRenderSpots(defaultCenter[1], defaultCenter[0]);
+    // Load parking spots from API and render (autoCenter=true to fly to spots if none nearby)
+        await loadAndRenderSpots(defaultCenter[1], defaultCenter[0], true);
 
     console.log('[Parking] Map initialized successfully with', currentMapTheme, 'theme');
     });
@@ -955,10 +1027,27 @@ function updateMapTheme(theme) {
             lngLat: userLocationMarker.getLngLat()
         } : null;
         
-        const savedSearchMarkers = markers.map(marker => ({
-            lngLat: marker.getLngLat(),
-            popup: marker.getPopup() ? marker.getPopup().getHTML() : null
-        }));
+        // Note: Mapbox Popup doesn't have getHTML() - store popup content differently
+        const savedSearchMarkers = markers.map(marker => {
+            const popup = marker.getPopup();
+            let popupHTML = null;
+            if (popup) {
+                // Try to get HTML from popup's internal content or DOM element
+                try {
+                    const popupEl = popup.getElement();
+                    if (popupEl) {
+                        const contentEl = popupEl.querySelector('.mapboxgl-popup-content');
+                        popupHTML = contentEl ? contentEl.innerHTML : null;
+                    }
+                } catch (e) {
+                    console.warn('[Parking] Could not extract popup HTML:', e);
+                }
+            }
+            return {
+                lngLat: marker.getLngLat(),
+                popup: popupHTML
+            };
+        });
         
         // Change map style
         map.setStyle(shouldBeDark ? DARK_STYLE : LIGHT_STYLE);
@@ -1085,15 +1174,28 @@ window.viewParkingDetails = function(spotId) {
     console.log('[Parking] Viewing details for:', spotId);
     const spot = parkingSpots.find(s => s.id === spotId);
     if (spot) {
-        map.flyTo({
-            center: [spot.lng, spot.lat],
-            zoom: 17,
-            duration: 500
-        });
+        // Only fly to if we have valid coordinates
+        if (spot.lat && spot.lng && !isNaN(spot.lat) && !isNaN(spot.lng)) {
+            map.flyTo({
+                center: [spot.lng, spot.lat],
+                zoom: 17,
+                duration: 500
+            });
+        }
         highlightParkingCard(spotId);
-    }
-    if (typeof loadIndoorLayout === 'function') {
-        loadIndoorLayout(spotId);
+        
+        // Load indoor layout using the garage ID, not the spot ID
+        // For indoor/mixed type garages only
+        if (typeof loadIndoorLayout === 'function' && spot.garageId) {
+            console.log('[Parking] Loading indoor layout for garage:', spot.garageId);
+            loadIndoorLayout(spot.garageId);
+        } else if (typeof loadIndoorLayout === 'function' && spot.garageType === 'outdoor') {
+            console.log('[Parking] Outdoor garage - no indoor layout to load');
+        } else if (typeof loadIndoorLayout === 'function') {
+            console.warn('[Parking] Spot has no garageId, cannot load indoor layout');
+        }
+    } else {
+        console.warn('[Parking] Spot not found:', spotId);
     }
 };
 
