@@ -266,20 +266,29 @@ async function loadSpots(options = {}) {
         const spots = Array.isArray(response) ? response : (response.spots || response.data || []);
 
         // Normalize spot data for the map
-        parkingSpots = spots.map(spot => ({
-            id: spot.id,
-            lat: spot.latitude || spot.lat,
-            lng: spot.longitude || spot.lng,
-            price: spot.hourlyRate || spot.price || 0,
-            name: spot.name || `Spot ${spot.spotNumber || spot.id}`,
-            address: spot.address || '',
-            dayRate: spot.dayRate || null,
-            earlyBirdRate: spot.earlyBirdRate || null,
-            status: spot.status || 'AVAILABLE',
-            garageId: spot.garageId || null,
-            floorId: spot.floorId || null,
-            spotNumber: spot.spotNumber || null
-        }));
+        parkingSpots = spots.map(spot => {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/f1052472-dcd6-4b87-96ad-ffa85af549eb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'parking.js:269',message:'Normalizing spot data',data:{spotId:spot.id,spotLat:spot.latitude||spot.lat,spotLng:spot.longitude||spot.lng,garageLat:spot.garage?.lat,garageLng:spot.garage?.lng},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
+            const normalized = {
+                id: spot.id,
+                lat: spot.latitude || spot.lat,
+                lng: spot.longitude || spot.lng,
+                price: spot.hourlyRate || spot.price || 0,
+                name: spot.name || `Spot ${spot.spotNumber || spot.id}`,
+                address: spot.address || '',
+                dayRate: spot.dayRate || null,
+                earlyBirdRate: spot.earlyBirdRate || null,
+                status: spot.status || 'AVAILABLE',
+                garageId: spot.garageId || null,
+                floorId: spot.floorId || null,
+                spotNumber: spot.spotNumber || null
+            };
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/f1052472-dcd6-4b87-96ad-ffa85af549eb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'parking.js:285',message:'After normalization',data:{spotId:normalized.id,normalizedLat:normalized.lat,normalizedLng:normalized.lng,hasGarage:!!spot.garage},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
+            return normalized;
+        });
 
         console.log('[Parking] Loaded', parkingSpots.length, 'spots');
 
@@ -668,12 +677,21 @@ function addParkingSpotsInRadius(centerLat, centerLng) {
     const validSpotsInRadius = [];
     
     parkingSpots.forEach((spot) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/f1052472-dcd6-4b87-96ad-ffa85af549eb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'parking.js:670',message:'Before distance calculation',data:{spotId:spot.id,spotLat:spot.lat,spotLng:spot.lng,centerLat,centerLng,radiusMeters},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         const distance = calculateDistance(centerLat, centerLng, spot.lat, spot.lng);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/f1052472-dcd6-4b87-96ad-ffa85af549eb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'parking.js:671',message:'After distance calculation',data:{spotId:spot.id,distance,isNaN:isNaN(distance),isInRadius:distance<=radiusMeters},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         
         if (distance <= radiusMeters) {
             spot.distance = formatDistance(distance);
             spot.distanceMeters = distance;
             validSpotsInRadius.push(spot);
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/f1052472-dcd6-4b87-96ad-ffa85af549eb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'parking.js:677',message:'Spot added to validSpotsInRadius',data:{spotId:spot.id,validSpotsCount:validSpotsInRadius.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
         }
     });
     
@@ -715,15 +733,26 @@ function addParkingSpotsInRadius(centerLat, centerLng) {
                 // Safety check: ensure we didn't add it in a different thread/event
                 if (existingMarkerIds.has(spot.id)) return;
 
-                const marker = new ParkingMarkerOverlay(
-                    new google.maps.LatLng(spot.lat, spot.lng),
-                    spot.price,
-                    spot,
-                    map
-                );
-                
-                parkingMarkers.push(marker);
-                existingMarkerIds.add(spot.id); // Mark as added
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/f1052472-dcd6-4b87-96ad-ffa85af549eb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'parking.js:714',message:'Before creating marker',data:{spotId:spot.id,spotLat:spot.lat,spotLng:spot.lng,hasValidCoords:spot.lat!==null&&spot.lng!==null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                // #endregion
+                try {
+                    const marker = new ParkingMarkerOverlay(
+                        new google.maps.LatLng(spot.lat, spot.lng),
+                        spot.price,
+                        spot,
+                        map
+                    );
+                    // #region agent log
+                    fetch('http://127.0.0.1:7242/ingest/f1052472-dcd6-4b87-96ad-ffa85af549eb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'parking.js:722',message:'Marker created successfully',data:{spotId:spot.id,markerCreated:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                    // #endregion
+                    parkingMarkers.push(marker);
+                    existingMarkerIds.add(spot.id); // Mark as added
+                } catch (error) {
+                    // #region agent log
+                    fetch('http://127.0.0.1:7242/ingest/f1052472-dcd6-4b87-96ad-ffa85af549eb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'parking.js:728',message:'Marker creation failed',data:{spotId:spot.id,error:error.message,spotLat:spot.lat,spotLng:spot.lng},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                    // #endregion
+                }
                 
             }, delayCounter * 50); // 50ms delay between each new drop
             
