@@ -1,235 +1,44 @@
 /**
- * parking.js - Google Maps Integration with Theme Support & Search Autocomplete
+ * parking.js - Mapbox GL JS Integration with Theme Support & Search Autocomplete
  * 
  * Depends on:
  * - config.js (for API_BASE)
  * - api.js (for apiFetch, isAuthenticated)
  * - auth.js (for requireAuth - optional)
- * - Google Maps API
+ * - Mapbox GL JS
+ * - Mapbox GL Geocoder
  */
+
+// Mapbox Access Token
+mapboxgl.accessToken = 'pk.eyJ1IjoibnVyeWsyMDA0IiwiYSI6ImNtajRpM2txYzE3dHkzZXI3MzhzbXA1YTUifQ.ZivO4brO-dW8uMmJtDuRdA';
 
 let map;
 let currentMapTheme = 'light';
-let autocomplete;
-let markers = []; // Store markers for cleanup
-let parkingMarkers = [];
+let geocoder;
+let markers = []; // Store search markers for cleanup
+let parkingMarkers = []; // Store parking spot markers
+let userLocationMarker = null;
 let userLocation = null;
-let radiusMeters = 2000; // 2km radius - adjust as needed
+let radiusMeters = 2000; // 2km radius
 
 // Store loaded parking spots from API
 let parkingSpots = [];
 
-// Light Mode Map Styles (Retro/Vintage warm tones)
-const lightMapStyles = [
-  {
-    "elementType": "geometry",
-    "stylers": [{"color": "#ebe3cd"}]
-  },
-  {
-    "elementType": "labels.text.fill",
-    "stylers": [{"color": "#523735"}]
-  },
-  {
-    "elementType": "labels.text.stroke",
-    "stylers": [{"color": "#f5f1e6"}]
-  },
-  {
-    "featureType": "administrative",
-    "elementType": "geometry.stroke",
-    "stylers": [{"color": "#c9b2a6"}]
-  },
-  {
-    "featureType": "administrative.land_parcel",
-    "elementType": "geometry.stroke",
-    "stylers": [{"color": "#dcd2be"}]
-  },
-  {
-    "featureType": "administrative.land_parcel",
-    "elementType": "labels.text.fill",
-    "stylers": [{"color": "#ae9e90"}]
-  },
-  {
-    "featureType": "landscape.natural",
-    "elementType": "geometry",
-    "stylers": [{"color": "#dfd2ae"}]
-  },
-  {
-    "featureType": "poi",
-    "elementType": "geometry",
-    "stylers": [{"color": "#dfd2ae"}]
-  },
-  {
-    "featureType": "poi",
-    "elementType": "labels.text.fill",
-    "stylers": [{"color": "#93817c"}]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "geometry.fill",
-    "stylers": [{"color": "#a5b076"}]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "labels.text.fill",
-    "stylers": [{"color": "#447530"}]
-  },
-  {
-    "featureType": "road",
-    "elementType": "geometry",
-    "stylers": [{"color": "#f5f1e6"}]
-  },
-  {
-    "featureType": "road.arterial",
-    "elementType": "geometry",
-    "stylers": [{"color": "#fdfcf8"}]
-  },
-  {
-    "featureType": "road.highway",
-    "elementType": "geometry",
-    "stylers": [{"color": "#f8c967"}]
-  },
-  {
-    "featureType": "road.highway",
-    "elementType": "geometry.stroke",
-    "stylers": [{"color": "#e9bc62"}]
-  },
-  {
-    "featureType": "road.highway.controlled_access",
-    "elementType": "geometry",
-    "stylers": [{"color": "#e98d58"}]
-  },
-  {
-    "featureType": "road.highway.controlled_access",
-    "elementType": "geometry.stroke",
-    "stylers": [{"color": "#db8555"}]
-  },
-  {
-    "featureType": "road.local",
-    "elementType": "labels.text.fill",
-    "stylers": [{"color": "#806b63"}]
-  },
-  {
-    "featureType": "transit.line",
-    "elementType": "geometry",
-    "stylers": [{"color": "#dfd2ae"}]
-  },
-  {
-    "featureType": "transit.line",
-    "elementType": "labels.text.fill",
-    "stylers": [{"color": "#8f7d77"}]
-  },
-  {
-    "featureType": "transit.line",
-    "elementType": "labels.text.stroke",
-    "stylers": [{"color": "#ebe3cd"}]
-  },
-  {
-    "featureType": "transit.station",
-    "elementType": "geometry",
-    "stylers": [{"color": "#dfd2ae"}]
-  },
-  {
-    "featureType": "water",
-    "elementType": "geometry.fill",
-    "stylers": [{"color": "#b9d3c2"}]
-  },
-  {
-    "featureType": "water",
-    "elementType": "labels.text.fill",
-    "stylers": [{"color": "#92998d"}]
-  }
-];
+// =========================================================================
+// MAPBOX STYLE CONFIGURATION
+// =========================================================================
 
-// Dark Mode Map Styles (Night mode with cool tones)
-const darkMapStyles = [
-  {
-    "elementType": "geometry",
-    "stylers": [{"color": "#242f3e"}]
-  },
-  {
-    "elementType": "labels.text.fill",
-    "stylers": [{"color": "#746855"}]
-  },
-  {
-    "elementType": "labels.text.stroke",
-    "stylers": [{"color": "#242f3e"}]
-  },
-  {
-    "featureType": "administrative.locality",
-    "elementType": "labels.text.fill",
-    "stylers": [{"color": "#d59563"}]
-  },
-  {
-    "featureType": "poi",
-    "elementType": "labels.text.fill",
-    "stylers": [{"color": "#d59563"}]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "geometry",
-    "stylers": [{"color": "#263c3f"}]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "labels.text.fill",
-    "stylers": [{"color": "#6b9a76"}]
-  },
-  {
-    "featureType": "road",
-    "elementType": "geometry",
-    "stylers": [{"color": "#38414e"}]
-  },
-  {
-    "featureType": "road",
-    "elementType": "geometry.stroke",
-    "stylers": [{"color": "#212a37"}]
-  },
-  {
-    "featureType": "road",
-    "elementType": "labels.text.fill",
-    "stylers": [{"color": "#9ca5b3"}]
-  },
-  {
-    "featureType": "road.highway",
-    "elementType": "geometry",
-    "stylers": [{"color": "#746855"}]
-  },
-  {
-    "featureType": "road.highway",
-    "elementType": "geometry.stroke",
-    "stylers": [{"color": "#1f2835"}]
-  },
-  {
-    "featureType": "road.highway",
-    "elementType": "labels.text.fill",
-    "stylers": [{"color": "#f3d19c"}]
-  },
-  {
-    "featureType": "transit",
-    "elementType": "geometry",
-    "stylers": [{"color": "#2f3948"}]
-  },
-  {
-    "featureType": "transit.station",
-    "elementType": "labels.text.fill",
-    "stylers": [{"color": "#d59563"}]
-  },
-  {
-    "featureType": "water",
-    "elementType": "geometry",
-    "stylers": [{"color": "#17263c"}]
-  },
-  {
-    "featureType": "water",
-    "elementType": "labels.text.fill",
-    "stylers": [{"color": "#515c6d"}]
-  },
-  {
-    "featureType": "water",
-    "elementType": "labels.text.stroke",
-    "stylers": [{"color": "#17263c"}]
-  }
-];
+// Light mode style - Mapbox Streets (closest to Google Maps default)
+const LIGHT_STYLE = 'mapbox://styles/mapbox/streets-v12';
+
+// Dark mode style - Navigation Night has better icon/POI visibility than dark-v11
+// It includes all the same sprites and icons as streets-v12 but with dark theming
+const DARK_STYLE = 'mapbox://styles/mapbox/navigation-night-v1';
+
+// Why navigation-night-v1 instead of dark-v11:
+// - dark-v11 is a minimal style with reduced POI visibility
+// - navigation-night-v1 has full POI/icon coverage like streets-v12
+// - Both styles use the same sprite sheets, ensuring icon parity
 
 // =========================================================================
 // API FUNCTIONS
@@ -262,14 +71,10 @@ async function loadSpots(options = {}) {
         const response = await apiFetch(endpoint);
 
         // Handle different response formats
-        // API might return { spots: [...] } or just [...]
         const spots = Array.isArray(response) ? response : (response.spots || response.data || []);
 
         // Normalize spot data for the map
         parkingSpots = spots.map(spot => {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/f1052472-dcd6-4b87-96ad-ffa85af549eb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'parking.js:269',message:'Normalizing spot data',data:{spotId:spot.id,spotLat:spot.latitude||spot.lat,spotLng:spot.longitude||spot.lng,garageLat:spot.garage?.lat,garageLng:spot.garage?.lng},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-            // #endregion
             const normalized = {
                 id: spot.id,
                 lat: spot.latitude || spot.lat,
@@ -284,9 +89,6 @@ async function loadSpots(options = {}) {
                 floorId: spot.floorId || null,
                 spotNumber: spot.spotNumber || null
             };
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/f1052472-dcd6-4b87-96ad-ffa85af549eb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'parking.js:285',message:'After normalization',data:{spotId:normalized.id,normalizedLat:normalized.lat,normalizedLng:normalized.lng,hasGarage:!!spot.garage},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-            // #endregion
             return normalized;
         });
 
@@ -296,7 +98,6 @@ async function loadSpots(options = {}) {
 
     } catch (error) {
         console.error('[Parking] Failed to load spots:', error.message);
-        // Return empty array on error, don't break the UI
         return [];
     }
 }
@@ -323,21 +124,18 @@ async function loadAndRenderSpots(centerLat, centerLng) {
 
 /**
  * Handle booking a parking spot.
- * Checks authentication and redirects appropriately.
  * @param {string} spotId - The spot ID to book
  * @param {number} price - The hourly price
  */
 function handleBookNow(spotId, price) {
     console.log('[Parking] Booking spot:', spotId, 'at price:', price);
 
-    // Check if user is authenticated
     if (!isAuthenticated()) {
         console.log('[Parking] User not authenticated, showing login prompt');
         showLoginPrompt(spotId);
         return;
     }
 
-    // User is authenticated, proceed to booking
     proceedToBooking(spotId);
 }
 
@@ -346,10 +144,8 @@ function handleBookNow(spotId, price) {
  * @param {string} spotId - The spot ID user wanted to book
  */
 function showLoginPrompt(spotId) {
-    // Store the spot ID for after login
     sessionStorage.setItem('pendingBookingSpotId', spotId);
 
-    // Option 1: Show a modal (if you have one)
     const loginModal = document.getElementById('login-modal');
     if (loginModal) {
         loginModal.classList.remove('hidden');
@@ -357,13 +153,11 @@ function showLoginPrompt(spotId) {
         return;
     }
 
-    // Option 2: Show confirmation dialog and redirect
     const shouldLogin = confirm(
         'You need to log in to book a parking spot.\n\nWould you like to log in now?'
     );
 
     if (shouldLogin) {
-        // Store current page for redirect after login
         sessionStorage.setItem('redirectAfterLogin', window.location.href);
         window.location.href = 'login.html';
     }
@@ -382,7 +176,6 @@ function proceedToBooking(spotId) {
         return;
     }
 
-    // Store spot data for the booking page
     const bookingData = {
         spotId: spot.id,
         spotName: spot.name,
@@ -397,12 +190,6 @@ function proceedToBooking(spotId) {
 
     sessionStorage.setItem('bookingSpotData', JSON.stringify(bookingData));
 
-    // Close info window if open
-    if (window.currentParkingInfoWindow) {
-        window.currentParkingInfoWindow.close();
-    }
-
-    // Redirect to booking page
     window.location.href = `booking.html?spotId=${spotId}`;
 }
 
@@ -410,7 +197,9 @@ function proceedToBooking(spotId) {
 // MAP HELPER FUNCTIONS
 // =========================================================================
 
-// Calculate distance between two coordinates (Haversine formula)
+/**
+ * Calculate distance between two coordinates (Haversine formula)
+ */
 function calculateDistance(lat1, lng1, lat2, lng2) {
     const R = 6371e3; // Earth's radius in meters
     const φ1 = lat1 * Math.PI / 180;
@@ -423,10 +212,12 @@ function calculateDistance(lat1, lng1, lat2, lng2) {
               Math.sin(Δλ/2) * Math.sin(Δλ/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
-    return R * c; // Distance in meters
+    return R * c;
 }
 
-// Format distance for display
+/**
+ * Format distance for display
+ */
 function formatDistance(meters) {
     if (meters < 1000) {
         return Math.round(meters) + ' m';
@@ -435,8 +226,10 @@ function formatDistance(meters) {
     }
 }
 
-// Create HTML for parking marker
-function createParkingMarkerHTML(price) {
+/**
+ * Create HTML element for parking marker
+ */
+function createParkingMarkerElement(price) {
     let priceClass = 'price-medium';
     if (price === 0) {
         priceClass = 'price-free';
@@ -448,9 +241,9 @@ function createParkingMarkerHTML(price) {
         priceClass = 'price-high';
     }
     
-    const div = document.createElement('div');
-    div.className = `parking-marker ${priceClass}`;
-    div.innerHTML = `
+    const el = document.createElement('div');
+    el.className = `parking-marker ${priceClass}`;
+    el.innerHTML = `
         <div class="car-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
@@ -459,124 +252,54 @@ function createParkingMarkerHTML(price) {
         <div class="price">${price === 0 ? 'FREE' : '$' + price.toFixed(2)}</div>
     `;
     
-    return div;
+    return el;
 }
 
-// Robust Overlay class with Zoom Scaling and One-time Animation
-class ParkingMarkerOverlay extends google.maps.OverlayView {
-    constructor(position, price, spotData, map) {
-        super();
-        this.position = position;
-        this.price = price;
-        this.spotData = spotData;
-        
-        // References
-        this.container = null;
-        this.scaler = null;
-        this.content = null;
-        
-        // State
-        this.visible = false; 
-        
-        this.setMap(map);
-    }
+/**
+ * Create a Mapbox marker for a parking spot
+ */
+function createParkingMarker(spot) {
+    const el = createParkingMarkerElement(spot.price);
     
-    onAdd() {
-        // 1. Container: Anchors strictly to the map coordinate
-        this.container = document.createElement('div');
-        this.container.style.position = 'absolute';
-        this.container.style.cursor = 'pointer';
-        // IMPORTANT: Start fully invisible so it doesn't flash at (0,0)
-        this.container.style.opacity = '0'; 
-        
-        // 2. Scaler: Handles Zoom in/out size
-        this.scaler = document.createElement('div');
-        this.scaler.className = 'marker-scaler'; // Hook for CSS transitions
-        this.scaler.style.transformOrigin = 'bottom center';
-
-        // 3. Content: The visual card
-        this.content = createParkingMarkerHTML(this.price);
-        
-        // Structure: Container -> Scaler -> Content
-        this.scaler.appendChild(this.content);
-        this.container.appendChild(this.scaler);
-        
-        // Add to map
-        const panes = this.getPanes();
-        panes.overlayMouseTarget.appendChild(this.container);
-        
-        // Events
-        this.container.addEventListener('click', (e) => {
+    // Create the marker
+    const marker = new mapboxgl.Marker({
+        element: el,
+        anchor: 'bottom'
+    })
+    .setLngLat([spot.lng, spot.lat]);
+    
+    // Store spot data on marker for reference
+    marker.spotData = spot;
+    
+    // Add click handler
+    el.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.handleMarkerClick();
+        highlightParkingCard(spot.id);
+        map.flyTo({
+            center: [spot.lng, spot.lat],
+            zoom: 17,
+            duration: 500
         });
-    }
+    });
     
-    draw() {
-        const overlayProjection = this.getProjection();
-        if (!overlayProjection || !this.container) return;
-        
-        // --- 1. Positioning ---
-        const point = overlayProjection.fromLatLngToDivPixel(this.position);
-        if (point) {
-            this.container.style.left = point.x + 'px';
-            this.container.style.top = point.y + 'px';
-        }
-
-        // --- 2. Zoom Scaling ---
-        const zoom = this.getMap().getZoom();
-        let scale = 1;
-        if (zoom >= 17) scale = 1.1;
-        else if (zoom >= 15) scale = 0.9;
-        else if (zoom >= 13) scale = 0.6;
-        else scale = 0.4;
-        
-        if (this.scaler) {
-            this.scaler.style.transform = `translate(-50%, -100%) scale(${scale})`;
-            
-            // Toggle compact mode
-            if (zoom < 14) this.content.classList.add('compact-mode');
-            else this.content.classList.remove('compact-mode');
-        }
-
-        // --- 3. THE ANIMATION FIX ---
-        // We ensure the element is positioned (Step 1) BEFORE we turn on visibility
-        if (!this.visible) {
-            // requestAnimationFrame 1: Wait for DOM to register the 'left' and 'top' set above
+    // Trigger drop animation
             requestAnimationFrame(() => {
-                // requestAnimationFrame 2: Wait for browser to paint that position (still invisible)
                 requestAnimationFrame(() => {
-                    if (this.container) {
-                        this.container.style.opacity = '1'; // Make container visible
-                        this.content.classList.add('animate-drop'); // Trigger the CSS animation
-                        this.visible = true;
-                    }
+            el.classList.add('animate-drop');
                 });
             });
-        }
-    }
     
-    onRemove() {
-        if (this.container && this.container.parentNode) {
-            this.container.parentNode.removeChild(this.container);
-        }
-        this.visible = false;
-    }
-    
-    handleMarkerClick() {
-        highlightParkingCard(this.spotData.id);
-        map.panTo(this.position);
-        map.setZoom(17);
-    }
+    return marker;
 }
 
-// Update parking window with cards
+/**
+ * Update parking window with cards
+ */
 function updateParkingWindow(nearbySpots) {
     const parkingWindow = document.querySelector('.parking-window');
     
     if (!parkingWindow) return;
     
-    // Clear existing content
     parkingWindow.innerHTML = '';
     
     if (nearbySpots.length === 0) {
@@ -593,14 +316,15 @@ function updateParkingWindow(nearbySpots) {
         return;
     }
     
-    // Add parking cards
     nearbySpots.forEach(spot => {
         const card = createParkingCard(spot);
         parkingWindow.appendChild(card);
     });
 }
 
-// Create parking card element
+/**
+ * Create parking card element
+ */
 function createParkingCard(spot) {
     const card = document.createElement('div');
     card.className = 'parking-card';
@@ -647,9 +371,11 @@ function createParkingCard(spot) {
     // Add click handler to pan to marker
     card.addEventListener('click', (e) => {
         if (!e.target.closest('button')) {
-            const position = new google.maps.LatLng(spot.lat, spot.lng);
-            map.panTo(position);
-            map.setZoom(17);
+            map.flyTo({
+                center: [spot.lng, spot.lat],
+                zoom: 17,
+                duration: 500
+            });
             highlightParkingCard(spot.id);
         }
     });
@@ -657,7 +383,9 @@ function createParkingCard(spot) {
     return card;
 }
 
-// Highlight parking card
+/**
+ * Highlight parking card
+ */
 function highlightParkingCard(spotId) {
     document.querySelectorAll('.parking-card').forEach(card => {
         card.classList.remove('highlighted');
@@ -670,113 +398,100 @@ function highlightParkingCard(spotId) {
     }
 }
 
-// Add parking spots within radius
+/**
+ * Add parking spots within radius
+ */
 function addParkingSpotsInRadius(centerLat, centerLng) {
-    
-    // 1. First, find all spots that SHOULD be visible based on current location
+    // Find all spots within radius
     const validSpotsInRadius = [];
     
     parkingSpots.forEach((spot) => {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/f1052472-dcd6-4b87-96ad-ffa85af549eb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'parking.js:670',message:'Before distance calculation',data:{spotId:spot.id,spotLat:spot.lat,spotLng:spot.lng,centerLat,centerLng,radiusMeters},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
         const distance = calculateDistance(centerLat, centerLng, spot.lat, spot.lng);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/f1052472-dcd6-4b87-96ad-ffa85af549eb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'parking.js:671',message:'After distance calculation',data:{spotId:spot.id,distance,isNaN:isNaN(distance),isInRadius:distance<=radiusMeters},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
         
         if (distance <= radiusMeters) {
             spot.distance = formatDistance(distance);
             spot.distanceMeters = distance;
             validSpotsInRadius.push(spot);
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/f1052472-dcd6-4b87-96ad-ffa85af549eb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'parking.js:677',message:'Spot added to validSpotsInRadius',data:{spotId:spot.id,validSpotsCount:validSpotsInRadius.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-            // #endregion
         }
     });
     
-    // Sort by distance (for the sidebar list)
+    // Sort by distance
     validSpotsInRadius.sort((a, b) => a.distanceMeters - b.distanceMeters);
     
-    // Update the sidebar list (always update this to show correct distances)
+    // Update the sidebar list
     updateParkingWindow(validSpotsInRadius);
     
-    // --- SMART MARKER MANAGEMENT START ---
+    // --- SMART MARKER MANAGEMENT ---
     
-    // 2. Create a Set of valid IDs for fast lookup
     const validSpotIds = new Set(validSpotsInRadius.map(s => s.id));
     
-    // 3. REMOVE markers that are no longer in the radius
-    // We filter the existing parkingMarkers array
+    // Remove markers no longer in radius
     parkingMarkers = parkingMarkers.filter(marker => {
         const stillVisible = validSpotIds.has(marker.spotData.id);
         
         if (!stillVisible) {
-            marker.setMap(null); // Remove from Google Map
-            return false;        // Remove from our memory array
+            marker.remove();
+            return false;
         }
-        return true; // Keep marker in memory (preserving its position/state)
+        return true;
     });
     
-    // 4. ADD only the NEW markers that aren't on the map yet
-    // Create a Set of IDs currently on the map
+    // Add only new markers
     const existingMarkerIds = new Set(parkingMarkers.map(m => m.spotData.id));
     
-    let delayCounter = 0; // Counter to ensure staggering only affects new items
+    let delayCounter = 0;
     
     validSpotsInRadius.forEach((spot) => {
-        // Only create a marker if it doesn't exist yet
         if (!existingMarkerIds.has(spot.id)) {
-            
-            // Stagger animation for NEW markers only
             setTimeout(() => {
-                // Safety check: ensure we didn't add it in a different thread/event
                 if (existingMarkerIds.has(spot.id)) return;
 
-                // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/f1052472-dcd6-4b87-96ad-ffa85af549eb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'parking.js:714',message:'Before creating marker',data:{spotId:spot.id,spotLat:spot.lat,spotLng:spot.lng,hasValidCoords:spot.lat!==null&&spot.lng!==null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-                // #endregion
                 try {
-                    const marker = new ParkingMarkerOverlay(
-                        new google.maps.LatLng(spot.lat, spot.lng),
-                        spot.price,
-                        spot,
-                        map
-                    );
-                    // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/f1052472-dcd6-4b87-96ad-ffa85af549eb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'parking.js:722',message:'Marker created successfully',data:{spotId:spot.id,markerCreated:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-                    // #endregion
+                    const marker = createParkingMarker(spot);
+                    marker.addTo(map);
                     parkingMarkers.push(marker);
-                    existingMarkerIds.add(spot.id); // Mark as added
+                    existingMarkerIds.add(spot.id);
                 } catch (error) {
-                    // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/f1052472-dcd6-4b87-96ad-ffa85af549eb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'parking.js:728',message:'Marker creation failed',data:{spotId:spot.id,error:error.message,spotLat:spot.lat,spotLng:spot.lng},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-                    // #endregion
+                    console.error('[Parking] Marker creation failed:', error);
                 }
                 
-            }, delayCounter * 50); // 50ms delay between each new drop
+            }, delayCounter * 50);
             
             delayCounter++;
         }
     });
     
-    // --- SMART MARKER MANAGEMENT END ---
-    
     console.log(`[Parking] Map updated: ${parkingMarkers.length} active markers (${delayCounter} new).`);
 }
 
-// Clear parking markers
+/**
+ * Clear all parking markers
+ */
 function clearParkingMarkers() {
     parkingMarkers.forEach(marker => {
-        marker.setMap(null);
+        marker.remove();
     });
     parkingMarkers = [];
 }
 
-// Initialize Google Map when page loads
+/**
+ * Clear search markers
+ */
+function clearMarkers() {
+    markers.forEach(marker => marker.remove());
+    markers = [];
+}
+
+// =========================================================================
+// MAP INITIALIZATION
+// =========================================================================
+
+/**
+ * Initialize Mapbox map when page loads
+ */
 async function initMap() {
-    const defaultCenter = { lat: 43.207079, lng: 76.669139 }; // Almaty, Kazakhstan
-    const mapContainer = document.getElementById('google-map');
+    const defaultCenter = [76.669139, 43.207079]; // [lng, lat] - Almaty, Kazakhstan
+    const mapContainer = document.getElementById('mapbox-map');
     
     if (!mapContainer) {
         console.error('Map container not found!');
@@ -789,58 +504,405 @@ async function initMap() {
     const isDark = savedTheme === 'dark' || (savedTheme === 'system' && prefersDark);
     currentMapTheme = isDark ? 'dark' : 'light';
     
-    // Create the map with custom options
-    map = new google.maps.Map(mapContainer, {
+    // Create the map
+    map = new mapboxgl.Map({
+        container: 'mapbox-map',
+        style: isDark ? DARK_STYLE : LIGHT_STYLE,
         center: defaultCenter,
         zoom: 14,
         
-        // FIX: Remove Ctrl requirement for zoom
-        gestureHandling: 'greedy',
+        // Interaction options (matching Google Maps 'greedy' gesture handling)
+        dragRotate: false, // Disable rotation for simpler UX
+        touchZoomRotate: true,
+        scrollZoom: true,
+        doubleClickZoom: true,
+        touchPitch: false,
         
-        // Apply initial theme styles
-        styles: isDark ? darkMapStyles : lightMapStyles,
-        
-        // Clean UI - Remove clutter
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: true,
-        zoomControl: true,
-        
-        // Control positions
-        zoomControlOptions: {
-            position: google.maps.ControlPosition.RIGHT_TOP
-        },
-        fullscreenControlOptions: {
-            position: google.maps.ControlPosition.RIGHT_TOP
-        }
+        // Attribution control
+        attributionControl: false
     });
     
-    // Initialize autocomplete on search input
-    initAutocomplete();
+    // Add navigation controls (zoom buttons) - positioned bottom-right to avoid overlap with parking window
+    map.addControl(new mapboxgl.NavigationControl({
+        showCompass: false, // Hide compass for cleaner look like Google Maps
+        visualizePitch: false
+    }), 'bottom-right');
+    
+    // Add fullscreen control - also bottom-right
+    map.addControl(new mapboxgl.FullscreenControl(), 'bottom-right');
+    
+    // Add attribution in bottom-left (required by Mapbox ToS)
+    map.addControl(new mapboxgl.AttributionControl({
+        compact: true
+    }), 'bottom-left');
+    
+    // Wait for map to load before adding features
+    map.on('load', async () => {
+        console.log('[Parking] Mapbox map loaded');
+        
+        // Initialize geocoder (search autocomplete)
+        initGeocoder();
     
     // Initialize "Find Me" button
     initFindMeButton();
     
-    // Setup map listeners for dynamic updates
+        // Setup map listeners
     setupMapListeners();
     
     // Setup button click delegation
     setupButtonHandlers();
     
     // Load parking spots from API and render
-    await loadAndRenderSpots(defaultCenter.lat, defaultCenter.lng);
+        await loadAndRenderSpots(defaultCenter[1], defaultCenter[0]);
 
     console.log('[Parking] Map initialized successfully with', currentMapTheme, 'theme');
+    });
+    
+    // Handle map style load errors
+    map.on('error', (e) => {
+        console.error('[Parking] Map error:', e.error);
+    });
 }
 
-// Setup event delegation for button clicks
+/**
+ * Initialize custom search with Mapbox Geocoding API
+ * Uses our own input and dropdown - no built-in Mapbox geocoder UI
+ */
+function initGeocoder() {
+    const searchInput = document.getElementById('map-search');
+    
+    if (!searchInput) {
+        console.error('Search input not found!');
+                return;
+            }
+            
+    // Create custom suggestions dropdown
+    let suggestionsContainer = document.getElementById('search-suggestions');
+    if (!suggestionsContainer) {
+        suggestionsContainer = document.createElement('div');
+        suggestionsContainer.id = 'search-suggestions';
+        suggestionsContainer.className = 'search-suggestions';
+        searchInput.parentNode.appendChild(suggestionsContainer);
+    }
+    
+    let debounceTimer = null;
+    let selectedIndex = -1;
+    let currentSuggestions = [];
+    
+    // Handle input changes with debounce
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        
+        clearTimeout(debounceTimer);
+        
+        if (query.length < 2) {
+            hideSuggestions();
+        return;
+    }
+    
+        debounceTimer = setTimeout(() => {
+            searchPlaces(query);
+        }, 300);
+    });
+    
+    // Handle keyboard navigation
+    searchInput.addEventListener('keydown', (e) => {
+        if (!suggestionsContainer.classList.contains('visible')) return;
+        
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, currentSuggestions.length - 1);
+                updateSelectedSuggestion();
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, 0);
+                updateSelectedSuggestion();
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (selectedIndex >= 0 && currentSuggestions[selectedIndex]) {
+                    selectPlace(currentSuggestions[selectedIndex]);
+                }
+                break;
+            case 'Escape':
+                hideSuggestions();
+                break;
+        }
+    });
+    
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+            hideSuggestions();
+        }
+    });
+    
+    // Search places using Mapbox Geocoding API
+    async function searchPlaces(query) {
+        try {
+            const center = map.getCenter();
+            const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?` +
+                `access_token=${mapboxgl.accessToken}` +
+                `&proximity=${center.lng},${center.lat}` +
+                `&limit=5` +
+                `&types=place,locality,neighborhood,address,poi`;
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.features && data.features.length > 0) {
+                currentSuggestions = data.features;
+                showSuggestions(data.features);
+        } else {
+                hideSuggestions();
+            }
+        } catch (error) {
+            console.error('[Parking] Geocoding error:', error);
+            hideSuggestions();
+        }
+    }
+    
+    // Show suggestions dropdown
+    function showSuggestions(features) {
+        selectedIndex = -1;
+        suggestionsContainer.innerHTML = features.map((feature, index) => `
+            <div class="suggestion-item" data-index="${index}">
+                <div class="suggestion-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                </div>
+                <div class="suggestion-text">
+                    <div class="suggestion-title">${feature.text || feature.place_name.split(',')[0]}</div>
+                    <div class="suggestion-address">${feature.place_name}</div>
+                </div>
+            </div>
+        `).join('');
+        
+        // Add click handlers
+        suggestionsContainer.querySelectorAll('.suggestion-item').forEach((item, index) => {
+            item.addEventListener('click', () => {
+                selectPlace(features[index]);
+            });
+        });
+        
+        suggestionsContainer.classList.add('visible');
+    }
+    
+    // Hide suggestions dropdown
+    function hideSuggestions() {
+        suggestionsContainer.classList.remove('visible');
+        currentSuggestions = [];
+        selectedIndex = -1;
+    }
+    
+    // Update selected suggestion highlight
+    function updateSelectedSuggestion() {
+        suggestionsContainer.querySelectorAll('.suggestion-item').forEach((item, index) => {
+            item.classList.toggle('selected', index === selectedIndex);
+        });
+    }
+    
+    // Select a place from suggestions
+    async function selectPlace(feature) {
+        hideSuggestions();
+        
+        // Update search input
+        searchInput.value = feature.place_name;
+        
+        // Clear existing search markers
+        clearMarkers();
+        
+        // Fly to location
+        map.flyTo({
+            center: feature.center,
+            zoom: 17,
+            duration: 500
+        });
+        
+        // Add marker at selected location
+        const marker = new mapboxgl.Marker({
+            color: '#5562E9'
+        })
+        .setLngLat(feature.center)
+        .setPopup(new mapboxgl.Popup({ offset: 25 })
+            .setHTML(`
+                <div style="padding: 10px;">
+                    <h3 style="margin: 0 0 8px 0; font-weight: 600;">${feature.text || feature.place_name.split(',')[0]}</h3>
+                    <p style="margin: 0; font-size: 14px; color: #666;">${feature.place_name}</p>
+                </div>
+            `)
+        )
+        .addTo(map);
+        
+        marker.togglePopup();
+        markers.push(marker);
+        
+        // Load spots for the new location
+        const [lng, lat] = feature.center;
+        await loadAndRenderSpots(lat, lng);
+        
+        console.log('[Parking] Place selected:', feature);
+    }
+}
+
+/**
+ * Initialize "Find Me" button (geolocation)
+ */
+function initFindMeButton() {
+    const findMeBtn = document.getElementById('find-me-btn');
+    
+    if (!findMeBtn) return;
+    
+    findMeBtn.addEventListener('click', async () => {
+        if (navigator.geolocation) {
+            // Show loading state
+            findMeBtn.disabled = true;
+            findMeBtn.style.opacity = '0.6';
+            
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const pos = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    
+                    userLocation = pos;
+                    
+                    // Fly to user location
+                    map.flyTo({
+                        center: [pos.lng, pos.lat],
+                        zoom: 15,
+                        duration: 1000
+                    });
+                    
+                    // Clear existing search markers
+                    clearMarkers();
+                    
+                    // Remove previous user location marker
+                    if (userLocationMarker) {
+                        userLocationMarker.remove();
+                    }
+                    
+                    // Create custom user location marker element
+                    const el = document.createElement('div');
+                    el.className = 'user-location-marker';
+                    el.innerHTML = `
+                        <div class="user-location-dot"></div>
+                        <div class="user-location-pulse"></div>
+                    `;
+                    
+                    // Add marker at user location
+                    userLocationMarker = new mapboxgl.Marker({
+                        element: el,
+                        anchor: 'center'
+                    })
+                    .setLngLat([pos.lng, pos.lat])
+                    .addTo(map);
+                    
+                    // Load and show nearby parking spots
+                    await loadAndRenderSpots(pos.lat, pos.lng);
+                    
+                    console.log('[Parking] User location found:', pos);
+                    
+                    // Reset button state
+                    findMeBtn.disabled = false;
+                    findMeBtn.style.opacity = '1';
+                },
+                (error) => {
+                    console.error('[Parking] Geolocation error:', error);
+                    alert('Error: The Geolocation service failed.');
+                    findMeBtn.disabled = false;
+                    findMeBtn.style.opacity = '1';
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        } else {
+            alert('Error: Your browser doesn\'t support geolocation.');
+        }
+    });
+}
+
+/**
+ * Setup map event listeners
+ */
+function setupMapListeners() {
+    let moveTimeout;
+    let isZooming = false;
+    
+    // Detect zoom start
+    map.on('zoomstart', () => {
+        isZooming = true;
+    });
+    
+    map.on('zoomend', () => {
+        // Update marker sizes based on zoom level
+        updateMarkerSizes();
+    });
+    
+    // Map idle event (after pan/zoom complete)
+    map.on('idle', () => {
+        clearTimeout(moveTimeout);
+        
+        moveTimeout = setTimeout(async () => {
+            if (!isZooming) {
+                const center = map.getCenter();
+                await loadAndRenderSpots(center.lat, center.lng);
+            }
+            isZooming = false;
+        }, 500);
+    });
+    
+    // Update on drag end
+    map.on('dragend', async () => {
+        const center = map.getCenter();
+        await loadAndRenderSpots(center.lat, center.lng);
+    });
+}
+
+/**
+ * Update marker sizes based on zoom level
+ */
+function updateMarkerSizes() {
+    const zoom = map.getZoom();
+    
+    parkingMarkers.forEach(marker => {
+        const el = marker.getElement();
+        if (!el) return;
+        
+        // Toggle compact mode based on zoom
+        if (zoom < 14) {
+            el.classList.add('compact-mode');
+        } else {
+            el.classList.remove('compact-mode');
+        }
+        
+        // Scale markers based on zoom
+        let scale = 1;
+        if (zoom >= 17) scale = 1.1;
+        else if (zoom >= 15) scale = 1;
+        else if (zoom >= 13) scale = 0.8;
+        else scale = 0.6;
+        
+        el.style.transform = `scale(${scale})`;
+    });
+}
+
+/**
+ * Setup event delegation for button clicks
+ */
 function setupButtonHandlers() {
-    // Use event delegation on the parking window container
     const parkingWindow = document.querySelector('.parking-window');
     
     if (parkingWindow) {
         parkingWindow.addEventListener('click', (e) => {
-            // Handle "Book Now" button clicks
             const bookBtn = e.target.closest('.book-now-btn');
             if (bookBtn) {
                 e.preventDefault();
@@ -851,7 +913,6 @@ function setupButtonHandlers() {
                 return;
             }
             
-            // Handle "View Details" button clicks
             const detailsBtn = e.target.closest('.view-details-btn');
             if (detailsBtn) {
                 e.preventDefault();
@@ -864,175 +925,13 @@ function setupButtonHandlers() {
     }
 }
 
-// Initialize Places Autocomplete
-function initAutocomplete() {
-    const searchInput = document.getElementById('map-search');
-    
-    if (!searchInput) {
-        console.error('Search input not found!');
-        return;
-    }
-    
-    // Create autocomplete instance
-    autocomplete = new google.maps.places.Autocomplete(searchInput, {
-        // Bias results to current map bounds
-        bounds: map.getBounds(),
-        strictBounds: false,
-        // You can restrict to specific types: ['geocode', 'establishment']
-        types: [] // Empty means all types
-    });
-    
-    // Bind autocomplete to map bounds (updates as map moves)
-    autocomplete.bindTo('bounds', map);
-    
-    // Listen for place selection
-    autocomplete.addListener('place_changed', async () => {
-        const place = autocomplete.getPlace();
-        
-        if (!place.geometry || !place.geometry.location) {
-            // User entered a name that was not suggested
-            console.log("No details available for input: '" + place.name + "'");
-            return;
-        }
-        
-        // Clear existing markers
-        clearMarkers();
-        
-        // If the place has a geometry, present it on the map
-        if (place.geometry.viewport) {
-            map.fitBounds(place.geometry.viewport);
-        } else {
-            map.setCenter(place.geometry.location);
-            map.setZoom(17);
-        }
-        
-        // Add a marker for the selected place
-        const marker = new google.maps.Marker({
-            map: map,
-            position: place.geometry.location,
-            animation: google.maps.Animation.DROP,
-            title: place.name
-        });
-        
-        markers.push(marker);
-        
-        // Optional: Show info window with place details
-        const infoWindow = new google.maps.InfoWindow({
-            content: `
-                <div style="padding: 10px;">
-                    <h3 style="margin: 0 0 8px 0; color: var(--text-primary);">${place.name}</h3>
-                    <p style="margin: 0; color: var(--text-secondary); font-size: 14px;">${place.formatted_address || ''}</p>
-                </div>
-            `
-        });
-        
-        infoWindow.open(map, marker);
-        
-        // Load spots for the new location
-        const lat = place.geometry.location.lat();
-        const lng = place.geometry.location.lng();
-        await loadAndRenderSpots(lat, lng);
-        
-        console.log('[Parking] Place selected:', place);
-    });
-}
+// =========================================================================
+// THEME MANAGEMENT
+// =========================================================================
 
-// Initialize "Find Me" button (geolocation)
-function initFindMeButton() {
-    const findMeBtn = document.getElementById('find-me-btn');
-    
-    if (!findMeBtn) return;
-    
-    findMeBtn.addEventListener('click', async () => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    const pos = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    };
-                    
-                    userLocation = pos;
-                    
-                    // Center map on user location
-                    map.setCenter(pos);
-                    map.setZoom(15);
-                    
-                    // Clear existing search markers
-                    clearMarkers();
-                    
-                    // Add marker at user location
-                    const marker = new google.maps.Marker({
-                        position: pos,
-                        map: map,
-                        animation: google.maps.Animation.DROP,
-                        title: 'Your Location',
-                        icon: {
-                            path: google.maps.SymbolPath.CIRCLE,
-                            scale: 10,
-                            fillColor: '#5562E9',
-                            fillOpacity: 1,
-                            strokeColor: '#ffffff',
-                            strokeWeight: 2
-                        }
-                    });
-                    
-                    markers.push(marker);
-                    
-                    // Load and show nearby parking spots
-                    await loadAndRenderSpots(pos.lat, pos.lng);
-                    
-                    console.log('[Parking] User location found:', pos);
-                },
-                () => {
-                    alert('Error: The Geolocation service failed.');
-                }
-            );
-        } else {
-            alert('Error: Your browser doesn\'t support geolocation.');
-        }
-    });
-}
-
-// Listen for map movement to update parking spots
-function setupMapListeners() {
-    let moveTimeout;
-    let isZooming = false;
-    
-    // Detect zoom start
-    map.addListener('zoom_changed', () => {
-        isZooming = true;
-    });
-    
-    // Map idle event (after pan/zoom complete)
-    map.addListener('idle', () => {
-        clearTimeout(moveTimeout);
-        
-        // Only update parking spots after panning (not zooming)
-        moveTimeout = setTimeout(async () => {
-            if (!isZooming) {
-                const center = map.getCenter();
-                await loadAndRenderSpots(center.lat(), center.lng());
-            }
-            isZooming = false;
-        }, 500);
-    });
-    
-    // Alternatively, only update on dragend (when user stops panning)
-    map.addListener('dragend', async () => {
-        const center = map.getCenter();
-        await loadAndRenderSpots(center.lat(), center.lng());
-    });
-}
-
-
-// Clear all search markers from map (not parking markers)
-function clearMarkers() {
-    markers.forEach(marker => marker.setMap(null));
-    markers = [];
-}
-
-// Function to update map theme dynamically
+/**
+ * Update map theme dynamically
+ */
 function updateMapTheme(theme) {
     if (!map) return;
     
@@ -1042,19 +941,24 @@ function updateMapTheme(theme) {
     
     if (newTheme !== currentMapTheme) {
         currentMapTheme = newTheme;
-        map.setOptions({
-            styles: shouldBeDark ? darkMapStyles : lightMapStyles
-        });
+        
+        // Change map style
+        map.setStyle(shouldBeDark ? DARK_STYLE : LIGHT_STYLE);
+        
+        // Re-add markers after style change (Mapbox removes custom layers on style change)
+        map.once('style.load', () => {
+            // Markers are DOM elements, they persist through style changes
         console.log('[Parking] Map theme updated to:', newTheme);
+        });
     }
 }
 
-// Listen for theme changes
+// Listen for theme changes from your app
 window.addEventListener('themeChanged', (event) => {
     updateMapTheme(event.detail.theme);
 });
 
-// Also listen for OS theme changes when in system mode
+// Listen for OS theme changes when in system mode
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     const savedTheme = localStorage.getItem('theme') || 'system';
     if (savedTheme === 'system') {
@@ -1062,41 +966,43 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
     }
 });
 
+// =========================================================================
+// REAL-TIME UPDATES
+// =========================================================================
+
 // Listen for real-time spot updates via WebSocket
 window.addEventListener('spot:update', (event) => {
     const { spotId, status, ...updates } = event.detail;
     console.log('[Parking] Real-time spot update:', spotId, status);
     
-    // Update local data
     const spotIndex = parkingSpots.findIndex(s => s.id === spotId);
     if (spotIndex !== -1) {
         parkingSpots[spotIndex] = { ...parkingSpots[spotIndex], status, ...updates };
         
-        // Re-render if needed
         if (map) {
             const center = map.getCenter();
-            addParkingSpotsInRadius(center.lat(), center.lng());
+            addParkingSpotsInRadius(center.lat, center.lng);
         }
     }
 });
 
 // =========================================================================
-// GLOBAL EXPORTS (for onclick handlers in HTML and external use)
+// GLOBAL EXPORTS
 // =========================================================================
 
-// Book parking spot (called from info window or card)
 window.bookParkingSpot = function(spotId, price) {
     handleBookNow(spotId, price);
 };
 
-// View parking details
 window.viewParkingDetails = function(spotId) {
     console.log('[Parking] Viewing details for:', spotId);
     const spot = parkingSpots.find(s => s.id === spotId);
     if (spot) {
-        const position = new google.maps.LatLng(spot.lat, spot.lng);
-        map.panTo(position);
-        map.setZoom(17);
+        map.flyTo({
+            center: [spot.lng, spot.lat],
+            zoom: 17,
+            duration: 500
+        });
         highlightParkingCard(spotId);
     }
     if (typeof loadIndoorLayout === 'function') {
@@ -1104,24 +1010,22 @@ window.viewParkingDetails = function(spotId) {
     }
 };
 
-// Toggle parking spots visibility
 window.toggleParkingSpots = async function(show) {
     if (show) {
         const center = map.getCenter();
-        await loadAndRenderSpots(center.lat(), center.lng());
+        await loadAndRenderSpots(center.lat, center.lng);
     } else {
         clearParkingMarkers();
         updateParkingWindow([]);
     }
 };
 
-// Export functions for external use
 window.loadSpots = loadSpots;
 window.loadAndRenderSpots = loadAndRenderSpots;
 window.handleBookNow = handleBookNow;
 window.initMap = initMap;
 
-// Call initMap when DOM is ready
+// Initialize map when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(initMap, 100);
 });

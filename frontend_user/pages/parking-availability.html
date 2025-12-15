@@ -15,14 +15,9 @@
     <link rel="stylesheet" href="../css/parking-availability.css" />
     <link rel="stylesheet" href="../css/indoor.css" />
 
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"
-    />
+    <!-- Mapbox GL JS -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
   </head>
   <body class="app-layout">
     <aside id="sidebar-placeholder"></aside>
@@ -46,7 +41,7 @@
             </button>
           </div>
           <div class="parking-window"></div>
-          <div id="google-map"></div>
+          <div id="mapbox-map"></div>
         </section>
 
         <section id="indoor-layout-container" class="map-layer hidden">
@@ -171,8 +166,6 @@
     <script src="../js/socket-client.js"></script>
     <script src="../js/auth.js"></script>
     
-    <!-- Google Maps API -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTAHI2VO5yG60cwx16vEVje3qwW9ONwZ4&libraries=places"></script>
 
     <!-- Page-specific scripts -->
     <script src="../js/main.js" defer></script>

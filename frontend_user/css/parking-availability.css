@@ -23,47 +23,103 @@
     position: relative;
 }
 
-#google-map {
+#mapbox-map {
     flex-grow: 1; /* Make the map fill the container */
     width: 100%;
     z-index: 1; /* Sit behind controls */
 }
 
-.map-controls {
-    position: absolute;
-    top: var(--spacing-md);
-    left: var(--spacing-md);
-    z-index: 10;
-    display: flex;
-    gap: var(--spacing-sm);
-    
-}
+/* Note: .map-controls is defined in the custom search section below */
 
-.gm-style .gm-style-iw-c,
-.gm-style .gm-style-iw-d {
+/* Mapbox popup styles */
+.mapboxgl-popup-content {
     color: var(--text-primary);
     background-color: var(--bg-primary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    padding: 0;
 }
 
-/* Style the info window */
-.gm-style .gm-style-iw-t::after {
-    background: var(--bg-primary);
+.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
+    border-top-color: var(--bg-primary);
 }
 
-/* Position zoom controls nicely */
-.gm-bundled-control {
-    margin: var(--spacing-md) !important;
+.mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
+    border-bottom-color: var(--bg-primary);
 }
 
-/* Style zoom buttons to match your design */
-.gm-bundled-control .gmnoprint button {
+.mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
+    border-right-color: var(--bg-primary);
+}
+
+.mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
+    border-left-color: var(--bg-primary);
+}
+
+.mapboxgl-popup-close-button {
+    color: var(--text-secondary);
+    font-size: 18px;
+    padding: 4px 8px;
+}
+
+.mapboxgl-popup-close-button:hover {
+    color: var(--text-primary);
+    background-color: transparent;
+}
+
+/* Mapbox navigation controls */
+.mapboxgl-ctrl-group {
     background-color: var(--bg-primary) !important;
     border: 1px solid var(--border-color) !important;
     box-shadow: var(--shadow-lg) !important;
+    border-radius: var(--radius-md) !important;
 }
 
-.gm-bundled-control .gmnoprint button:hover {
+.mapboxgl-ctrl-group button {
+    background-color: var(--bg-primary) !important;
+    border: none !important;
+}
+
+.mapboxgl-ctrl-group button:hover {
     background-color: var(--bg-secondary) !important;
+}
+
+.mapboxgl-ctrl-group button + button {
+    border-top: 1px solid var(--border-color) !important;
+}
+
+/* Mapbox zoom icons */
+.mapboxgl-ctrl-zoom-in .mapboxgl-ctrl-icon,
+.mapboxgl-ctrl-zoom-out .mapboxgl-ctrl-icon {
+    filter: var(--icon-filter, none);
+}
+
+html.dark .mapboxgl-ctrl-zoom-in .mapboxgl-ctrl-icon,
+html.dark .mapboxgl-ctrl-zoom-out .mapboxgl-ctrl-icon {
+    filter: invert(1);
+}
+
+/* Mapbox fullscreen control */
+.mapboxgl-ctrl-fullscreen .mapboxgl-ctrl-icon {
+    filter: var(--icon-filter, none);
+}
+
+html.dark .mapboxgl-ctrl-fullscreen .mapboxgl-ctrl-icon {
+    filter: invert(1);
+}
+
+/* Mapbox attribution */
+.mapboxgl-ctrl-attrib {
+    background-color: rgba(var(--bg-primary-rgb, 255, 255, 255), 0.8) !important;
+    font-size: 10px;
+}
+
+html.dark .mapboxgl-ctrl-attrib {
+    background-color: rgba(30, 30, 30, 0.8) !important;
+}
+
+.mapboxgl-ctrl-attrib a {
+    color: var(--text-secondary) !important;
 }
 
 
@@ -452,71 +508,100 @@ html.dark #find-me-btn .icon-location-crosshairs {
     }
 }
 
-/* --- Google Maps Places Autocomplete Styling --- */
+/* --- Custom Search Suggestions Dropdown --- */
 
-/* Style the autocomplete dropdown to match your design */
-.pac-container {
+.map-controls {
+    position: absolute;
+    top: var(--spacing-md);
+    left: var(--spacing-md);
+    z-index: 10;
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: flex-start;
+}
+
+/* Search suggestions dropdown */
+.search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 300px;
+    max-height: 300px;
+    overflow-y: auto;
     background-color: var(--bg-primary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
     margin-top: 4px;
-    font-family: var(--font-family-base, 'Inter', sans-serif);
     z-index: 1000;
+    display: none;
 }
 
-/* Each autocomplete item */
-.pac-item {
+.search-suggestions.visible {
+    display: block;
+}
+
+.suggestion-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
     padding: var(--spacing-sm) var(--spacing-md);
-    border-top: 1px solid var(--border-color);
     cursor: pointer;
-    color: var(--text-primary);
-    font-size: 0.875rem;
+    transition: background-color 0.15s ease;
+    border-bottom: 1px solid var(--border-color);
 }
 
-.pac-item:first-child {
-    border-top: none;
+.suggestion-item:last-child {
+    border-bottom: none;
 }
 
-/* Hover state */
-.pac-item:hover {
+.suggestion-item:hover,
+.suggestion-item.selected {
     background-color: var(--bg-secondary);
 }
 
-/* Selected state */
-.pac-item-selected {
-    background-color: var(--color-primary-light);
+.suggestion-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    margin-top: 2px;
 }
 
-/* The place name text */
-.pac-item-query {
-    color: var(--text-primary);
+.suggestion-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.suggestion-title {
+    font-size: 0.875rem;
     font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* The secondary text (address) */
-.pac-matched {
-    color: var(--color-primary);
-    font-weight: 600;
-}
-
-/* Icon styling */
-.pac-icon {
-    background-image: none;
-    background-color: var(--color-primary);
-    width: 20px;
-    height: 20px;
-    margin-right: var(--spacing-sm);
-    border-radius: 4px;
-}
-
-/* "Powered by Google" logo at bottom */
-.pac-logo::after {
-    background-image: none;
-    content: 'Powered by Google';
-    padding: var(--spacing-xs) var(--spacing-sm);
+.suggestion-address {
     font-size: 0.75rem;
     color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+}
+
+/* Scrollbar for suggestions */
+.search-suggestions::-webkit-scrollbar {
+    width: 6px;
+}
+
+.search-suggestions::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
 }
 
 /* --- Custom Parking Spot Markers --- */
@@ -1002,4 +1087,85 @@ html.dark #find-me-btn .icon-location-crosshairs {
 /* Hide the SVG icon inside when compact */
 .parking-marker.compact-mode .car-icon svg {
     display: none;
+}
+
+/* --- User Location Marker --- */
+.user-location-marker {
+    position: relative;
+    width: 24px;
+    height: 24px;
+}
+
+.user-location-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    background-color: #5562E9;
+    border: 3px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(85, 98, 233, 0.5);
+    z-index: 2;
+}
+
+.user-location-pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    background-color: rgba(85, 98, 233, 0.3);
+    border-radius: 50%;
+    animation: pulse-ring 2s ease-out infinite;
+    z-index: 1;
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 0;
+    }
+}
+
+/* --- Mapbox Controls Position --- */
+
+/* Bottom-right controls (zoom, fullscreen) */
+.mapboxgl-ctrl-bottom-right {
+    right: 16px;
+    bottom: 16px;
+}
+
+/* Bottom-left controls (attribution, logo) */
+.mapboxgl-ctrl-bottom-left {
+    left: 16px;
+    bottom: 16px;
+}
+
+.mapboxgl-ctrl-logo {
+    margin: 0 0 4px 4px !important;
+}
+
+/* Ensure controls don't overlap with parking window on mobile */
+@media (max-width: 768px) {
+    .mapboxgl-ctrl-bottom-right {
+        right: 12px;
+        bottom: 12px;
+    }
+    
+    .parking-window {
+        width: 100%;
+        max-width: none;
+        position: relative;
+        top: auto;
+        right: auto;
+        max-height: 200px;
+        border-radius: 0;
+    }
 }
