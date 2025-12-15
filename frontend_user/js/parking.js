@@ -32,13 +32,15 @@ let parkingSpots = [];
 const LIGHT_STYLE = 'mapbox://styles/mapbox/streets-v12';
 
 // Dark mode style - Navigation Night has better icon/POI visibility than dark-v11
-// It includes all the same sprites and icons as streets-v12 but with dark theming
+// NOTE: If built-in POI icons still don't appear, navigation-night-v1 may have fewer
+// POI layers than streets-v12. In that case, consider using streets-v12 with a dark
+// overlay, or accept that some built-in icons may differ between light/dark modes.
 const DARK_STYLE = 'mapbox://styles/mapbox/navigation-night-v1';
 
-// Why navigation-night-v1 instead of dark-v11:
-// - dark-v11 is a minimal style with reduced POI visibility
-// - navigation-night-v1 has full POI/icon coverage like streets-v12
-// - Both styles use the same sprite sheets, ensuring icon parity
+// Style comparison:
+// - streets-v12: Full POI coverage, light theme
+// - navigation-night-v1: Navigation-focused, dark theme, good POI coverage
+// - dark-v11: Minimal style, reduced POI visibility (not recommended)
 
 // =========================================================================
 // API FUNCTIONS
@@ -942,13 +944,98 @@ function updateMapTheme(theme) {
     if (newTheme !== currentMapTheme) {
         currentMapTheme = newTheme;
         
+        // CRITICAL: Store marker data before style change
+        // Mapbox removes ALL markers when setStyle() is called
+        const savedParkingMarkers = parkingMarkers.map(marker => ({
+            spot: marker.spotData,
+            lngLat: marker.getLngLat()
+        }));
+        
+        const savedUserLocation = userLocationMarker ? {
+            lngLat: userLocationMarker.getLngLat()
+        } : null;
+        
+        const savedSearchMarkers = markers.map(marker => ({
+            lngLat: marker.getLngLat(),
+            popup: marker.getPopup() ? marker.getPopup().getHTML() : null
+        }));
+        
         // Change map style
         map.setStyle(shouldBeDark ? DARK_STYLE : LIGHT_STYLE);
         
-        // Re-add markers after style change (Mapbox removes custom layers on style change)
-        map.once('style.load', () => {
-            // Markers are DOM elements, they persist through style changes
-        console.log('[Parking] Map theme updated to:', newTheme);
+        // Re-add all markers after style loads
+        map.once('style.load', async () => {
+            console.log('[Parking] Map theme updated to:', newTheme);
+            
+            // Wait a frame to ensure style is fully loaded
+            await new Promise(resolve => requestAnimationFrame(resolve));
+            
+            // Re-add parking markers
+            parkingMarkers = [];
+            for (const saved of savedParkingMarkers) {
+                try {
+                    if (!saved.spot || !saved.lngLat) continue;
+                    
+                    const marker = createParkingMarker(saved.spot);
+                    marker.setLngLat(saved.lngLat);
+                    marker.addTo(map);
+                    parkingMarkers.push(marker);
+                } catch (error) {
+                    console.error('[Parking] Failed to restore parking marker:', error, saved);
+                }
+            }
+            
+            // Re-add user location marker
+            if (savedUserLocation && savedUserLocation.lngLat) {
+                try {
+                    const el = document.createElement('div');
+                    el.className = 'user-location-marker';
+                    el.innerHTML = `
+                        <div class="user-location-dot"></div>
+                        <div class="user-location-pulse"></div>
+                    `;
+                    
+                    userLocationMarker = new mapboxgl.Marker({
+                        element: el,
+                        anchor: 'center'
+                    })
+                    .setLngLat(savedUserLocation.lngLat)
+                    .addTo(map);
+                } catch (error) {
+                    console.error('[Parking] Failed to restore user location marker:', error);
+                }
+            }
+            
+            // Re-add search markers
+            markers = [];
+            for (const saved of savedSearchMarkers) {
+                try {
+                    if (!saved.lngLat) continue;
+                    
+                    const marker = new mapboxgl.Marker({
+                        color: '#5562E9'
+                    })
+                    .setLngLat(saved.lngLat);
+                    
+                    if (saved.popup) {
+                        marker.setPopup(new mapboxgl.Popup({ offset: 25 })
+                            .setHTML(saved.popup)
+                        );
+                    }
+                    
+                    marker.addTo(map);
+                    markers.push(marker);
+                } catch (error) {
+                    console.error('[Parking] Failed to restore search marker:', error);
+                }
+            }
+            
+            // Update marker sizes after restoration
+            if (parkingMarkers.length > 0) {
+                updateMarkerSizes();
+            }
+            
+            console.log(`[Parking] Restored ${parkingMarkers.length} parking markers, ${markers.length} search markers, user location: ${!!userLocationMarker}`);
         });
     }
 }
