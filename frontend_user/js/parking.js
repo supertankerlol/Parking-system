@@ -318,11 +318,23 @@ function createParkingMarker(spot) {
     
     console.log('[Parking] Creating marker for spot:', spot.id, 'at', [spot.lng, spot.lat]);
     
-    const el = createParkingMarkerElement(spot.price);
+    // Inner visual element for the marker
+    const innerEl = createParkingMarkerElement(spot.price);
+
+    // Wrapper used by Mapbox for positioning (it will receive translate() transforms)
+    const container = document.createElement('div');
+    container.className = 'marker-container';
+
+    // Scaler element so we can change size without touching Mapbox's transform
+    const scaler = document.createElement('div');
+    scaler.className = 'marker-scaler';
+
+    scaler.appendChild(innerEl);
+    container.appendChild(scaler);
     
-    // Create the marker
+    // Create the marker using the outer container element
     const marker = new mapboxgl.Marker({
-        element: el,
+        element: container,
         anchor: 'bottom'
     })
     .setLngLat([spot.lng, spot.lat]);
@@ -331,7 +343,7 @@ function createParkingMarker(spot) {
     marker.spotData = spot;
     
     // Add click handler
-    el.addEventListener('click', (e) => {
+    innerEl.addEventListener('click', (e) => {
             e.stopPropagation();
         highlightParkingCard(spot.id);
         map.flyTo({
@@ -344,7 +356,7 @@ function createParkingMarker(spot) {
     // Trigger drop animation - use double rAF to ensure element is in DOM
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-            el.classList.add('animate-drop');
+            innerEl.classList.add('animate-drop');
         });
     });
     
@@ -950,12 +962,16 @@ function updateMarkerSizes() {
     parkingMarkers.forEach(marker => {
         const el = marker.getElement();
         if (!el) return;
+
+        // Our structure is: container (Mapbox) -> .marker-scaler -> .parking-marker
+        const scaler = el.querySelector('.marker-scaler') || el;
+        const markerContent = el.querySelector('.parking-marker') || el;
         
         // Toggle compact mode based on zoom
         if (zoom < 14) {
-            el.classList.add('compact-mode');
+            markerContent.classList.add('compact-mode');
         } else {
-            el.classList.remove('compact-mode');
+            markerContent.classList.remove('compact-mode');
         }
         
         // Scale markers based on zoom
@@ -965,7 +981,8 @@ function updateMarkerSizes() {
         else if (zoom >= 13) scale = 0.8;
         else scale = 0.6;
         
-        el.style.transform = `scale(${scale})`;
+        // Apply scale on the inner scaler so we don't override Mapbox's translate() on the container
+        scaler.style.transform = `scale(${scale})`;
     });
 }
 
