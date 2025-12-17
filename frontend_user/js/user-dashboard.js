@@ -361,13 +361,23 @@
         if (searchForm) {
             searchForm.addEventListener('submit', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 filterBookings(searchInput?.value || '');
+                return false;
             });
         }
 
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 filterBookings(e.target.value);
+            });
+            
+            // Prevent Enter from submitting/reloading
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    filterBookings(e.target.value);
+                }
             });
         }
     }

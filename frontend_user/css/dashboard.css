@@ -68,6 +68,11 @@
 }
 
 /* --- Reservations Card --- */
+.card--reservations .card-content {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
 .reservation-list {
     list-style: none;
     padding: 0;
@@ -88,6 +93,32 @@
 .reservation-list .reservation-time {
     color: var(--text-secondary);
     font-size: 0.875rem;
+}
+.reservation-list .reservation-status {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: capitalize;
+}
+.reservation-list .status-confirmed {
+    background-color: #d4edda;
+    color: #155724;
+}
+.reservation-list .status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+.reservation-list .status-active {
+    background-color: #cce5ff;
+    color: #004085;
+}
+.reservation-list .status-completed {
+    background-color: #e2e3e5;
+    color: #383d41;
+}
+.reservation-list .status-cancelled {
+    background-color: #f8d7da;
+    color: #721c24;
 }
 
 #no-reservations {
