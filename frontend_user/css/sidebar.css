@@ -210,16 +210,24 @@ html.dark .theme-toggle__btn:not(.active) img {
 .sidebar__user-info {
     display: flex;
     flex-direction: column;
+    min-width: 0; /* Allow text truncation */
+    flex: 1;
 }
 
 .sidebar__user-name {
     font-weight: 500;
     color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sidebar__user-email {
     font-size: 0.875rem; /* 14px */
     color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sidebar__menu-link--logout {

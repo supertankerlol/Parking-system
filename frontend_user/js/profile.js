@@ -23,8 +23,13 @@
     async function loadProfile() {
         console.log('[Profile] Loading user profile...');
 
-        const response = await apiFetch('/users/me');
-        currentUser = response.user;
+        // Use UserStore if available for centralized data management
+        if (window.UserStore) {
+            currentUser = await window.UserStore.fetchUser();
+        } else {
+            const response = await apiFetch('/users/me');
+            currentUser = response.user;
+        }
 
         console.log('[Profile] Profile loaded:', currentUser);
 
@@ -46,12 +51,17 @@
     async function updateProfile(profileData) {
         console.log('[Profile] Updating profile:', profileData);
 
-        const response = await apiFetch('/users/me', {
-            method: 'PUT',
-            body: profileData
-        });
+        // Use UserStore if available for centralized data management
+        if (window.UserStore) {
+            currentUser = await window.UserStore.updateUser(profileData);
+        } else {
+            const response = await apiFetch('/users/me', {
+                method: 'PUT',
+                body: profileData
+            });
+            currentUser = response.user;
+        }
 
-        currentUser = response.user;
         console.log('[Profile] Profile updated:', currentUser);
 
         return currentUser;
@@ -76,6 +86,11 @@
 
         currentUser = response.user;
         console.log('[Profile] Avatar uploaded:', response.message);
+
+        // Update UserStore to sync sidebar
+        if (window.UserStore && response.user) {
+            window.UserStore.setUser(response.user);
+        }
 
         return response;
     }
@@ -318,8 +333,16 @@
         const fullName = document.getElementById('profile-name')?.value.trim();
         const phone = document.getElementById('profile-phone')?.value.trim();
 
+        // Validation
         if (!fullName) {
             showMessage('profile-message', 'Name is required.', 'error');
+            return;
+        }
+
+        // Validate phone format if provided
+        const isValidPhone = window.UserStore?.isValidPhone || ((p) => !p || /^[\d\s\-\+\(\)]{7,20}$/.test(p));
+        if (phone && !isValidPhone(phone)) {
+            showMessage('profile-message', 'Please enter a valid phone number.', 'error');
             return;
         }
 

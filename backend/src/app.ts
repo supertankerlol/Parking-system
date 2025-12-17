@@ -25,12 +25,21 @@ const corsOptions: cors.CorsOptions = {
   credentials: true, // Allow cookies and auth headers
 };
 app.use(cors(corsOptions));
-app.use(helmet());
+
+// Helmet with relaxed settings for static files
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow cross-origin image loading
+  crossOriginEmbedderPolicy: false, // Disable COEP to allow images
+}));
+
 app.use(morgan('dev'));
 app.use(express.json());
 
-// Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+// Serve static files from uploads directory with CORS headers
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(path.join(process.cwd(), 'uploads')));
 
 // Mount routes
 app.use('/api/auth', authRoutes);

@@ -200,9 +200,70 @@ function loadSidebar(basePath, isAdminPage) {
             addLogoutListener(isAdminPage);
             
             // Initialize theme toggle (buttons are inside sidebar)
-            initializeThemeToggle(); 
+            initializeThemeToggle();
+            
+            // Load user profile data into sidebar
+            loadSidebarUserProfile();
         })
         .catch(error => console.error('Error loading sidebar:', error));
+}
+
+/**
+ * Load user profile data into sidebar.
+ * Uses UserStore if available, otherwise fetches directly.
+ */
+async function loadSidebarUserProfile() {
+    // Check if user is authenticated
+    if (typeof isAuthenticated === 'function' && !isAuthenticated()) {
+        return;
+    }
+
+    try {
+        // Use UserStore if available
+        if (window.UserStore) {
+            // Try cached data first
+            let user = window.UserStore.getUser();
+            if (user) {
+                window.UserStore.updateSidebarProfile(user);
+            }
+            // Fetch fresh data in background
+            window.UserStore.fetchUser().catch(err => {
+                console.warn('[Main] Could not refresh user profile:', err.message);
+            });
+        } else {
+            // Fallback: fetch directly
+            const response = await apiFetch('/users/me');
+            const user = response.user || response;
+            updateSidebarWithUser(user);
+        }
+    } catch (error) {
+        console.warn('[Main] Could not load sidebar profile:', error.message);
+    }
+}
+
+/**
+ * Update sidebar elements with user data (fallback when UserStore not available).
+ * @param {Object} user - User data
+ */
+function updateSidebarWithUser(user) {
+    if (!user) return;
+
+    const nameEl = document.querySelector('.sidebar__user-name');
+    const emailEl = document.querySelector('.sidebar__user-email');
+    const avatarImg = document.querySelector('.sidebar__avatar');
+
+    if (nameEl) nameEl.textContent = user.fullName || 'User';
+    if (emailEl) emailEl.textContent = user.email || '';
+    
+    if (avatarImg && user.avatarUrl) {
+        const avatarSrc = user.avatarUrl.startsWith('http') 
+            ? user.avatarUrl 
+            : `${window.API_BASE?.replace('/api', '') || ''}${user.avatarUrl}`;
+        avatarImg.src = avatarSrc;
+        avatarImg.onerror = () => {
+            avatarImg.src = '../assets/images/user.png';
+        };
+    }
 }
 
 /**
