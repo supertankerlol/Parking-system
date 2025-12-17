@@ -136,8 +136,10 @@
 
                     return `
                         <li class="reservation-item">
-                            <div class="reservation-spot">${spotName}${garageName ? ` - ${garageName}` : ''}</div>
-                            <div class="reservation-time">${startTime} - ${endTime}</div>
+                            <div class="reservation-info">
+                                <span class="reservation-spot" title="${spotName}${garageName ? ` - ${garageName}` : ''}">${spotName}${garageName ? ` - ${garageName}` : ''}</span>
+                                <span class="reservation-time" title="${startTime} - ${endTime}">${startTime} - ${endTime}</span>
+                            </div>
                             <div class="reservation-status ${statusClass}">${booking.status}</div>
                         </li>
                     `;

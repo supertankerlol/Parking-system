@@ -48,12 +48,13 @@ const DARK_STYLE = 'mapbox://styles/mapbox/navigation-night-v1';
 
 /**
  * Load parking spots from the backend API.
+ * Groups spots by garage to avoid showing duplicate markers for indoor spots.
  * @param {Object} [options] - Query options
  * @param {number} [options.lat] - Latitude for location-based search
  * @param {number} [options.lng] - Longitude for location-based search
  * @param {number} [options.radius] - Radius in meters
  * @param {string} [options.status] - Filter by status (AVAILABLE, OCCUPIED, etc.)
- * @returns {Promise<Array>} Array of parking spots
+ * @returns {Promise<Array>} Array of parking spots (grouped by garage)
  */
 async function loadSpots(options = {}) {
     try {
@@ -75,39 +76,55 @@ async function loadSpots(options = {}) {
         // Handle different response formats
         const spots = Array.isArray(response) ? response : (response.spots || response.data || []);
 
-        // Normalize spot data for the map
-        parkingSpots = spots.map(spot => {
-            // For indoor spots, use garage coordinates as fallback
-            // Indoor spots have row/column but no lat/lng
+        // Group spots by garage to avoid duplicates on the map
+        const garageMap = new Map();
+        
+        spots.forEach(spot => {
             const garage = spot.garage || {};
+            const garageId = spot.garageId || garage.id || spot.id;
             const spotLat = spot.latitude || spot.lat || garage.lat;
             const spotLng = spot.longitude || spot.lng || garage.lng;
             
             // Skip spots without valid coordinates
             if (!spotLat || !spotLng || isNaN(spotLat) || isNaN(spotLng)) {
                 console.warn('[Parking] Spot missing coordinates:', spot.id, { spotLat, spotLng, garage });
+                return;
             }
             
-            const normalized = {
-                id: spot.id,
-                lat: spotLat,
-                lng: spotLng,
-                price: spot.hourlyRate || spot.price || 0,
-                name: spot.name || garage.name || `Spot ${spot.spotNumber || spot.id}`,
-                address: spot.address || garage.address || '',
-                dayRate: spot.dayRate || null,
-                earlyBirdRate: spot.earlyBirdRate || null,
-                status: spot.status || 'AVAILABLE',
-                garageId: spot.garageId || null,
-                floorId: spot.floorId || null,
-                spotNumber: spot.spotNumber || null,
-                garageName: garage.name || null,
-                garageType: garage.type || null
-            };
-            return normalized;
+            if (garageMap.has(garageId)) {
+                // Update existing garage entry - count available spots
+                const existing = garageMap.get(garageId);
+                if (spot.status === 'AVAILABLE') {
+                    existing.availableSpots++;
+                }
+                existing.totalSpots++;
+            } else {
+                // Create new garage entry
+                garageMap.set(garageId, {
+                    id: garageId,
+                    lat: spotLat,
+                    lng: spotLng,
+                    price: spot.hourlyRate || spot.price || garage.hourlyRate || 0,
+                    name: garage.name || spot.name || `Parking ${garageId}`,
+                    address: garage.address || spot.address || '',
+                    dayRate: spot.dayRate || garage.dayRate || null,
+                    earlyBirdRate: spot.earlyBirdRate || garage.earlyBirdRate || null,
+                    status: spot.status || 'AVAILABLE',
+                    garageId: garageId,
+                    floorId: spot.floorId || null,
+                    spotNumber: spot.spotNumber || null,
+                    garageName: garage.name || null,
+                    garageType: garage.type || null,
+                    availableSpots: spot.status === 'AVAILABLE' ? 1 : 0,
+                    totalSpots: 1
+                });
+            }
         });
+        
+        // Convert map to array
+        parkingSpots = Array.from(garageMap.values());
 
-        console.log('[Parking] Loaded', parkingSpots.length, 'spots');
+        console.log('[Parking] Loaded', spots.length, 'spots, grouped into', parkingSpots.length, 'garages');
 
         return parkingSpots;
 
@@ -404,6 +421,7 @@ function createParkingCard(spot) {
     const hourlyRate = spot.price === 0 ? 'Free' : `$${spot.price.toFixed(2)}/hour`;
     const dayRateHTML = spot.dayRate ? `Day rate: $${spot.dayRate.toFixed(2)}` : '';
     const earlyBirdHTML = spot.earlyBirdRate ? `<br>Early bird rate: $${spot.earlyBirdRate.toFixed(2)}` : '';
+    const availabilityHTML = spot.totalSpots ? `<span class="spots-available">${spot.availableSpots}/${spot.totalSpots} spots</span>` : '';
     
     card.innerHTML = `
         <div class="parking-card-header">
@@ -419,6 +437,7 @@ function createParkingCard(spot) {
                     </svg>
                     <span>${spot.distance || 'N/A'}</span>
                 </div>
+                ${availabilityHTML ? `<div class="parking-info-item">${availabilityHTML}</div>` : ''}
             </div>
             <div class="parking-address">
                 ${spot.address || 'Address not available'}

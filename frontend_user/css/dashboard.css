@@ -84,15 +84,29 @@
 .reservation-list li {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
     font-weight: 500;
+}
+.reservation-list .reservation-info {
+    flex: 1;
+    min-width: 0; /* Allow text truncation */
 }
 .reservation-list .reservation-spot {
     color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: block;
 }
 .reservation-list .reservation-time {
     color: var(--text-secondary);
-    font-size: 0.875rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
 }
 .reservation-list .reservation-status {
     font-size: 0.75rem;
