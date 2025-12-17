@@ -775,30 +775,63 @@
             totalCost
         });
 
-        // Prepare booking data for payment page
-        const bookingData = {
-            spotId: selectedSpot ? selectedSpot.id : '',
-            spotName: selectedSpot ? selectedSpot.label : '',
-            lotName: currentGarageData ? currentGarageData.name : '',
-            lotAddress: currentGarageData ? currentGarageData.address : '',
-            floorName: currentFloor ? currentFloor.name : '',
-            garageId: currentGarageData ? currentGarageData.id : '',
-            floorId: currentFloor ? currentFloor.id : '',
-            startTime: startTime,
-            endTime: endTime,
-            totalCost: totalCost,
-            hourlyRate: selectedSpot ? selectedSpot.hourlyRate : 5.00,
-            bookingId: generateBookingId(),
-            timestamp: new Date().toISOString()
-        };
+        // Disable submit button during processing
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating booking...';
+        }
 
-        // Store booking data in sessionStorage for payment page
-        sessionStorage.setItem('bookingData', JSON.stringify(bookingData));
+        try {
+            // Create booking via API
+            const response = await apiFetch('/bookings', {
+                method: 'POST',
+                body: {
+                    spotId: selectedSpot?.id,
+                    garageId: currentGarageData?.id,
+                    floorId: currentFloor?.id,
+                    startTime: new Date(startTime).toISOString(),
+                    endTime: new Date(endTime).toISOString()
+                }
+            });
 
-        console.log('[Indoor] Booking data saved:', bookingData);
+            console.log('[Indoor] Booking created:', response);
 
-        // Redirect to payment page
-        window.location.href = 'payment.html';
+            // Prepare booking data for payment page
+            const bookingData = {
+                spotId: selectedSpot ? selectedSpot.id : '',
+                spotName: selectedSpot ? selectedSpot.label : '',
+                lotName: currentGarageData ? currentGarageData.name : '',
+                lotAddress: currentGarageData ? currentGarageData.address : '',
+                floorName: currentFloor ? currentFloor.name : '',
+                garageId: currentGarageData ? currentGarageData.id : '',
+                floorId: currentFloor ? currentFloor.id : '',
+                startTime: startTime,
+                endTime: endTime,
+                totalCost: totalCost,
+                hourlyRate: selectedSpot ? selectedSpot.hourlyRate : 5.00,
+                bookingId: response.booking?.id,
+                apiBooking: response.booking,
+                timestamp: new Date().toISOString()
+            };
+
+            // Store booking data in sessionStorage for payment page
+            sessionStorage.setItem('bookingData', JSON.stringify(bookingData));
+
+            console.log('[Indoor] Booking data saved:', bookingData);
+
+            // Redirect to payment page
+            window.location.href = 'payment.html';
+
+        } catch (error) {
+            console.error('[Indoor] Booking error:', error);
+            alert(error.message || 'Failed to create booking. Please try again.');
+            
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Book Now';
+            }
+        }
     }
 
     /**

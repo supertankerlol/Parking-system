@@ -58,23 +58,7 @@
         return response;
     }
 
-    /**
-     * Confirm a booking payment.
-     * POST /api/bookings/:id/pay
-     * @param {string} bookingId - Booking ID
-     * @param {Object} paymentDetails - Payment details
-     * @returns {Promise<Object>} Confirmation result
-     */
-    async function confirmBookingPayment(bookingId, paymentDetails) {
-        console.log('[Payment] Confirming booking payment:', bookingId);
-
-        const response = await apiFetch(`/bookings/${bookingId}/pay`, {
-            method: 'POST',
-            body: paymentDetails
-        });
-
-        return response;
-    }
+    // confirmBookingPayment removed - use processPaymentAPI with /api/payments instead
 
     /**
      * Render payments list/table.
@@ -448,9 +432,19 @@
         }
 
         try {
+            // Get the real booking ID from the API response
+            const realBookingId = bookingData?.apiBooking?.id || bookingData?.bookingId;
+            
+            if (!realBookingId || realBookingId.startsWith('BK-')) {
+                // BK- prefix indicates a fake generated ID, not a real DB ID
+                showError('No valid booking found. Please create a booking first.');
+                resetPayButton(payButton, originalButtonText);
+                return;
+            }
+
             // Prepare payment data
             const paymentData = {
-                bookingId: bookingData?.bookingId || bookingData?.apiBooking?.id,
+                bookingId: realBookingId,
                 amount: parseFloat(bookingData?.totalCost?.replace('$', '') || '0'),
                 paymentMethod: 'card',
                 cardDetails: {
@@ -460,31 +454,15 @@
                 }
             };
 
-            // Try to process via API
-            let success = false;
-
+            // Process via API
             try {
-                // If we have a booking ID from API, confirm the payment
-                if (bookingData?.apiBooking?.id) {
-                    await confirmBookingPayment(bookingData.apiBooking.id, paymentData);
-                    success = true;
-                } else {
-                    // Fallback to general payment API
-                    await processPaymentAPI(paymentData);
-                    success = true;
-                }
-            } catch (apiError) {
-                console.warn('[Payment] API payment failed, using simulation:', apiError.message);
-                // Fallback to simulated payment
-                success = await processPaymentSimulated(paymentData);
-            }
-
-            if (success) {
+                await processPaymentAPI(paymentData);
                 console.log('[Payment] Payment successful!');
                 sessionStorage.removeItem('bookingData');
                 showPaymentSuccess();
-            } else {
-                showError('Payment failed. Please try again.');
+            } catch (apiError) {
+                console.error('[Payment] API payment failed:', apiError.message);
+                showError(apiError.message || 'Payment failed. Please try again.');
                 resetPayButton(payButton, originalButtonText);
             }
 
@@ -541,7 +519,6 @@
     // Export functions for external use
     window.loadPayments = loadPayments;
     window.processPaymentAPI = processPaymentAPI;
-    window.confirmBookingPayment = confirmBookingPayment;
     window.renderPayments = renderPayments;
     window.initPaymentSystem = initPaymentSystem;
     window.loadBookingData = loadBookingData;
@@ -550,7 +527,6 @@
     window.Payment = {
         loadHistory: loadPayments,
         process: processPaymentAPI,
-        confirmBooking: confirmBookingPayment,
         render: renderPayments,
         init: initPaymentSystem
     };
