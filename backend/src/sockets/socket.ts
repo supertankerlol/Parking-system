@@ -35,3 +35,10 @@ export const emitSpotUpdate = (payload: any): void => {
     io.emit('spot:update', payload);
   }
 };
+
+export const emitBookingUpdate = (payload: any): void => {
+  const io = getIo();
+  if (io) {
+    io.emit('booking:update', payload);
+  }
+};

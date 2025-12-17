@@ -412,8 +412,10 @@
         const start = new Date(startTime);
         const end = new Date(endTime);
         const now = new Date();
-
-        if (start < now) {
+        
+        // Allow 2 minute tolerance for "start now" selections
+        const tolerance = 2 * 60 * 1000; // 2 minutes in ms
+        if (start.getTime() < now.getTime() - tolerance) {
             showError('Start time cannot be in the past.');
             return;
         }

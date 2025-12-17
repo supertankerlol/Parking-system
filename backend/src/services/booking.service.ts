@@ -139,7 +139,10 @@ export async function createBooking(
     throw new Error('End time must be after start time');
   }
 
-  if (startDate < new Date()) {
+  // Allow 2-minute tolerance for clock differences
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - 2);
+  if (startDate < now) {
     throw new Error('Start time cannot be in the past');
   }
 

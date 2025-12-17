@@ -442,10 +442,26 @@
                 return;
             }
 
+            // Calculate payment amount - prefer backend's totalCost (number) over frontend's string
+            let amount = 0;
+            // Priority: apiBooking.totalCost (from backend) > totalCost string > baseCost
+            const backendCost = bookingData?.apiBooking?.totalCost ?? bookingData?.apiBooking?.baseCost;
+            const frontendCost = bookingData?.totalCost;
+            
+            if (typeof backendCost === 'number' && backendCost > 0) {
+                amount = backendCost;
+            } else if (typeof frontendCost === 'number') {
+                amount = frontendCost;
+            } else if (typeof frontendCost === 'string') {
+                amount = parseFloat(frontendCost.replace(/[^0-9.]/g, '')) || 0;
+            }
+            
+            console.log('[Payment] Calculated amount:', amount, 'backend:', backendCost, 'frontend:', frontendCost);
+
             // Prepare payment data
             const paymentData = {
                 bookingId: realBookingId,
-                amount: parseFloat(bookingData?.totalCost?.replace('$', '') || '0'),
+                amount: amount,
                 paymentMethod: 'card',
                 cardDetails: {
                     cardholderName: cardName,

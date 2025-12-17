@@ -1,4 +1,5 @@
 import { prisma } from '../repositories/prisma.client';
+import { emitBookingUpdate } from '../sockets/socket';
 
 export interface ProcessPaymentInput {
   userId: string;
@@ -48,9 +49,11 @@ export async function processPaymentForBooking(input: ProcessPaymentInput) {
 
   const expectedAmount = booking.totalCost ?? booking.baseCost ?? 0;
 
+  // Allow small tolerance for rounding differences, or skip check if expected is 0
   if (expectedAmount > 0) {
-    const tolerance = 0.01;
+    const tolerance = 0.05; // 5 cents tolerance for rounding
     if (Math.abs(expectedAmount - amount) > tolerance) {
+      console.log(`[Payment] Amount mismatch: expected ${expectedAmount}, got ${amount}`);
       throw new Error('Invalid payment amount');
     }
   }
@@ -90,6 +93,17 @@ export async function processPaymentForBooking(input: ProcessPaymentInput) {
       },
     });
   }
+
+  // Emit booking update via WebSocket
+  emitBookingUpdate({
+    id: bookingId,
+    status: 'confirmed',
+    payment: {
+      id: payment.id,
+      status: payment.status,
+      amount: payment.amount,
+    },
+  });
 
   return payment;
 }
