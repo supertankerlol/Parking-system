@@ -134,6 +134,14 @@
     width: 100%;
 }
 
+.container__title-search {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+    padding-right: var(--spacing-lg);
+}
+
 /* 6. Responsiveness */
 @media (max-width: 992px) {
     .profile-grid {

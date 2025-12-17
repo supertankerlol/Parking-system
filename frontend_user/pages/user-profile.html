@@ -1,125 +1,234 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <title>User Profile</title>
-    
-    <link rel="stylesheet" href="../css/fonts.css">
-    
-    <link rel="stylesheet" href="../css/style.css">
-    <link rel="stylesheet" href="../css/sidebar.css">
-    <link rel="stylesheet" href="../css/header.css">
-    <link rel="stylesheet" href="../css/footer.css">
-    <link rel="stylesheet" href="../css/forms.css">
-    
-    <link rel="stylesheet" href="../css/profile.css">
-</head>
-<body class="app-layout">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <title>User Profile</title>
+
+    <link rel="stylesheet" href="../css/fonts.css" />
+
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/sidebar.css" />
+    <link rel="stylesheet" href="../css/header.css" />
+    <link rel="stylesheet" href="../css/footer.css" />
+    <link rel="stylesheet" href="../css/forms.css" />
+
+    <link rel="stylesheet" href="../css/profile.css" />
+  </head>
+  <body class="app-layout">
     <aside id="sidebar-placeholder"></aside>
 
     <main class="main-content">
+      <header id="header-placeholder"></header>
 
-        <header id="header-placeholder"></header>
+      <div class="page-content">
+        <div class="profile-grid">
+          <section class="profile-card profile-avatar-card">
+            <h2 class="card-title">Profile Photo</h2>
+            <div class="avatar-section">
+              <div class="avatar-container">
+                <img
+                  id="avatar-image"
+                  src=""
+                  alt="Profile Avatar"
+                  class="avatar-image hidden"
+                />
+                <div id="avatar-initials" class="avatar-initials">GH</div>
+              </div>
+              <div class="avatar-actions">
+                <input
+                  type="file"
+                  id="avatar-input"
+                  accept="image/*"
+                  class="visually-hidden"
+                />
+                <button
+                  type="button"
+                  id="change-photo-btn"
+                  class="btn btn-secondary"
+                >
+                  Change Photo
+                </button>
+              </div>
+            </div>
+          </section>
 
-        <div class="page-content">
-            
-            <div class="profile-grid">
+          <section class="profile-card">
+            <h2 class="card-title">Personal Information</h2>
+            <form class="profile-form" id="profile-form">
+              <div class="form-group">
+                <label for="profile-name" class="form-label">Full Name</label>
+                <input
+                  type="text"
+                  id="profile-name"
+                  name="name"
+                  class="form-control"
+                  value="Guy Hawkins"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="profile-email" class="form-label"
+                  >Email Address</label
+                >
+                <input
+                  type="email"
+                  id="profile-email"
+                  name="email"
+                  class="form-control"
+                  value="Guyh@gmail.com"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="profile-phone" class="form-label"
+                  >Phone Number</label
+                >
+                <input
+                  type="tel"
+                  id="profile-phone"
+                  name="phone"
+                  class="form-control"
+                  value="+1 555 123 4567"
+                />
+              </div>
+              <button type="submit" class="btn btn-primary">
+                Save Changes
+              </button>
+              <p
+                id="profile-message"
+                class="form-message"
+                aria-live="polite"
+              ></p>
+            </form>
+          </section>
 
-                <section class="profile-card profile-avatar-card">
-                    <h2 class="card-title">Profile Photo</h2>
-                    <div class="avatar-section">
-                        <div class="avatar-container">
-                            <img id="avatar-image" src="" alt="Profile Avatar" class="avatar-image hidden">
-                            <div id="avatar-initials" class="avatar-initials">GH</div>
-                        </div>
-                        <div class="avatar-actions">
-                            <input type="file" id="avatar-input" accept="image/*" class="visually-hidden">
-                            <button type="button" id="change-photo-btn" class="btn btn-secondary">Change Photo</button>
-                        </div>
-                    </div>
-                </section>
+          <section class="profile-card">
+            <h2 class="card-title">My Vehicles</h2>
 
-                <section class="profile-card">
-                    <h2 class="card-title">Personal Information</h2>
-                    <form class="profile-form" id="profile-form">
-                        <div class="form-group">
-                            <label for="profile-name" class="form-label">Full Name</label>
-                            <input type="text" id="profile-name" name="name" class="form-control" value="Guy Hawkins" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="profile-email" class="form-label">Email Address</label>
-                            <input type="email" id="profile-email" name="email" class="form-control" value="Guyh@gmail.com" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="profile-phone" class="form-label">Phone Number</label>
-                            <input type="tel" id="profile-phone" name="phone" class="form-control" value="+1 555 123 4567">
-                        </div>
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
-                        <p id="profile-message" class="form-message" aria-live="polite"></p>
-                    </form>
-                </section>
+            <ul id="vehicle-list" class="item-list"></ul>
+            <p id="no-vehicles" class="hidden">You have no vehicles saved.</p>
 
-                <section class="profile-card">
-                    <h2 class="card-title">My Vehicles</h2>
-                    
-                    <ul id="vehicle-list" class="item-list">
-                        </ul>
-                    <p id="no-vehicles" class="hidden">You have no vehicles saved.</p>
-                    
-                    <form class="profile-form" id="add-vehicle-form" class="add-item-form">
-                        <label for="new-plate" class="form-label">Add New Vehicle (License Plate)</label>
-                        <div class="form-row">
-                            <input type="text" id="new-plate" class="form-control" placeholder="e.g., NYC-456" required>
-                            <button type="submit" class="btn btn-primary">Add</button>
-                        </div>
-                    </form>
-                </section>
+            <form
+              class="profile-form"
+              id="add-vehicle-form"
+              class="add-item-form"
+            >
+              <label for="new-plate" class="form-label"
+                >Add New Vehicle (License Plate)</label
+              >
+              <div class="form-row">
+                <input
+                  type="text"
+                  id="new-plate"
+                  class="form-control"
+                  placeholder="e.g., NYC-456"
+                  required
+                />
+                <button type="submit" class="btn btn-primary">Add</button>
+              </div>
+            </form>
+          </section>
 
-                <section class="profile-card">
-                    <h2 class="card-title">Change Password</h2>
-                    <form class="profile-form" id="password-form">
-                        <div class="form-group">
-                            <label for="current-password" class="form-label">Current Password</label>
-                            <input type="password" id="current-password" name="currentPassword" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="new-password" class="form-label">New Password</label>
-                            <input type="password" id="new-password" name="newPassword" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="confirm-password" class="form-label">Confirm New Password</label>
-                            <input type="password" id="confirm-password" name="confirmPassword" class="form-control" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Update Password</button>
-                        <p id="password-message" class="form-message" aria-live="polite"></p>
-                    </form>
-                </section>
+          <section class="profile-card">
+            <h2 class="card-title">Change Password</h2>
+            <form class="profile-form" id="password-form">
+              <div class="form-group">
+                <label for="current-password" class="form-label"
+                  >Current Password</label
+                >
+                <input
+                  type="password"
+                  id="current-password"
+                  name="currentPassword"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="new-password" class="form-label"
+                  >New Password</label
+                >
+                <input
+                  type="password"
+                  id="new-password"
+                  name="newPassword"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="confirm-password" class="form-label"
+                  >Confirm New Password</label
+                >
+                <input
+                  type="password"
+                  id="confirm-password"
+                  name="confirmPassword"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <button type="submit" class="btn btn-primary">
+                Update Password
+              </button>
+              <p
+                id="password-message"
+                class="form-message"
+                aria-live="polite"
+              ></p>
+            </form>
+          </section>
 
-                <section class="profile-card card-full-width">
-                    <h2 class="card-title">Payment History & Receipts</h2>
-                    <table class="history-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Spot</th>
-                                <th>Duration</th>
-                                <th>Total</th>
-                                <th>Receipt</th>
-                            </tr>
-                        </thead>
-                        <tbody id="receipt-table-body">
-                            <tr>
-                                <td colspan="5">No payment history found.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </section>
-
-            </div> </div> <footer id="footer-placeholder"></footer>
-
+          <section class="profile-card card-full-width">
+            <div class="container__title-search">
+                <h2 class="card-title">Payment History & Receipts</h2>
+                <div class="page-header__right">
+                  <form
+                    class="page-header__search-form"
+                    role="search"
+                    id="header-search-form"
+                  >
+                    <label for="header-search" class="visually-hidden"
+                      >Search</label
+                    >
+                    <input
+                      type="search"
+                      id="header-search"
+                      class="page-header__search-input"
+                      placeholder="Search..."
+                    />
+                    <button
+                      type="submit"
+                      class="page-header__search-btn"
+                      aria-label="Submit search"
+                    >
+                      <img class="icon-search" src="../assets/icons/search_dark.svg" alt="search icon">
+                    </button>
+                  </form>
+                </div>
+              </div>
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Spot</th>
+                  <th>Duration</th>
+                  <th>Total</th>
+                  <th>Receipt</th>
+                </tr>
+              </thead>
+              <tbody id="receipt-table-body">
+                <tr>
+                  <td colspan="5">No payment history found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+        </div>
+      </div>
+      <footer id="footer-placeholder"></footer>
     </main>
 
     <!-- Core scripts in dependency order -->
@@ -129,5 +238,5 @@
     <script src="../js/auth.js"></script>
     <script src="../js/main.js" defer></script>
     <script src="../js/profile.js" defer></script>
-</body>
+  </body>
 </html>

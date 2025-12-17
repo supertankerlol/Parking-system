@@ -10,6 +10,7 @@
     'use strict';
 
     let currentUser = null;
+    let payments = []; // Store payments for search filtering
 
     // =========================================================================
     // API FUNCTIONS
@@ -219,13 +220,13 @@
 
     /**
      * Populate payment history table.
-     * @param {Array} payments - Array of payment data
+     * @param {Array} paymentData - Array of payment data
      */
-    function populatePaymentHistory(payments) {
+    function populatePaymentHistory(paymentData) {
         const tableBody = document.getElementById('receipt-table-body');
         if (!tableBody) return;
 
-        if (!payments || payments.length === 0) {
+        if (!paymentData || paymentData.length === 0) {
             tableBody.innerHTML = `
                 <tr>
                     <td colspan="5" class="empty-message">No payment history found.</td>
@@ -234,14 +235,14 @@
             return;
         }
 
-        tableBody.innerHTML = payments.map(payment => {
-            const date = new Date(payment.createdAt || payment.date).toLocaleDateString();
-            const spotName = payment.spotName || payment.spot?.name || 'N/A';
-            const duration = payment.duration || calculateDuration(payment.startTime, payment.endTime);
+        tableBody.innerHTML = paymentData.map(payment => {
+            const date = formatDate(payment.createdAt || payment.date);
+            const spotName = payment.spotName || payment.spot?.name || payment.booking?.spot?.name || 'N/A';
+            const duration = payment.duration || calculateDuration(payment.startTime || payment.booking?.startTime, payment.endTime || payment.booking?.endTime);
             const total = payment.amount ? `$${payment.amount.toFixed(2)}` : 'N/A';
 
             return `
-                <tr>
+                <tr data-payment-id="${payment.id}">
                     <td>${date}</td>
                     <td>${spotName}</td>
                     <td>${duration}</td>
@@ -254,6 +255,25 @@
                 </tr>
             `;
         }).join('');
+    }
+
+    /**
+     * Format date for display.
+     * @param {string} dateString - ISO date string
+     * @returns {string} Formatted date
+     */
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        } catch {
+            return dateString;
+        }
     }
 
     /**
@@ -557,13 +577,291 @@
     }
 
     /**
-     * Download a receipt.
+     * Download a receipt as PDF.
      * @param {string} paymentId - Payment ID
      */
-    function downloadReceipt(paymentId) {
-        // TODO: Implement receipt download
+    async function downloadReceipt(paymentId) {
         console.log('[Profile] Downloading receipt:', paymentId);
-        alert('Receipt download coming soon!');
+
+        // Find the payment in our cached data
+        const payment = payments.find(p => p.id === paymentId);
+        if (!payment) {
+            alert('Receipt not found.');
+            return;
+        }
+
+        // Generate receipt content
+        const receiptContent = generateReceiptHTML(payment);
+        
+        // Create a new window for printing/saving
+        const printWindow = window.open('', '_blank', 'width=800,height=600');
+        if (!printWindow) {
+            alert('Please allow popups to download the receipt.');
+            return;
+        }
+
+        printWindow.document.write(receiptContent);
+        printWindow.document.close();
+        
+        // Wait for content to load then trigger print
+        printWindow.onload = function() {
+            printWindow.print();
+        };
+    }
+
+    /**
+     * Generate receipt HTML for printing/download.
+     * @param {Object} payment - Payment data
+     * @returns {string} HTML content
+     */
+    function generateReceiptHTML(payment) {
+        const date = formatDate(payment.createdAt || payment.date);
+        const spotName = payment.spotName || payment.spot?.name || payment.booking?.spot?.name || 'N/A';
+        const garageName = payment.garageName || payment.spot?.garage?.name || payment.booking?.spot?.garage?.name || '';
+        const duration = payment.duration || calculateDuration(payment.startTime || payment.booking?.startTime, payment.endTime || payment.booking?.endTime);
+        const total = payment.amount ? `$${payment.amount.toFixed(2)}` : 'N/A';
+        const startTime = formatDateTime(payment.startTime || payment.booking?.startTime);
+        const endTime = formatDateTime(payment.endTime || payment.booking?.endTime);
+        const status = payment.status || 'completed';
+
+        return `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Parking Receipt - ${payment.id}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            color: #333;
+        }
+        .receipt-header {
+            text-align: center;
+            border-bottom: 2px solid #4F46E5;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .receipt-header h1 {
+            color: #4F46E5;
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        .receipt-header p {
+            color: #666;
+            margin: 0;
+        }
+        .receipt-id {
+            background: #f3f4f6;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 30px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .receipt-details {
+            margin-bottom: 30px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .detail-label {
+            color: #666;
+            font-weight: 500;
+        }
+        .detail-value {
+            font-weight: 600;
+            text-align: right;
+        }
+        .total-row {
+            background: #4F46E5;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            text-transform: uppercase;
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            color: #666;
+            font-size: 14px;
+        }
+        @media print {
+            body { padding: 20px; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt-header">
+        <h1>Parking Manager</h1>
+        <p>Parking Receipt</p>
+    </div>
+    
+    <div class="receipt-id">
+        Receipt ID: ${payment.id}
+    </div>
+    
+    <div class="receipt-details">
+        <div class="detail-row">
+            <span class="detail-label">Date</span>
+            <span class="detail-value">${date}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Parking Spot</span>
+            <span class="detail-value">${spotName}${garageName ? ` - ${garageName}` : ''}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Start Time</span>
+            <span class="detail-value">${startTime}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">End Time</span>
+            <span class="detail-value">${endTime}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Duration</span>
+            <span class="detail-value">${duration}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Status</span>
+            <span class="detail-value"><span class="status-badge">${status}</span></span>
+        </div>
+    </div>
+    
+    <div class="total-row">
+        <span>Total Paid</span>
+        <span>${total}</span>
+    </div>
+    
+    <div class="footer">
+        <p>Thank you for using Parking Manager!</p>
+        <p>This receipt was generated on ${new Date().toLocaleString()}</p>
+    </div>
+    
+    <div class="no-print" style="text-align: center; margin-top: 30px;">
+        <button onclick="window.print()" style="padding: 10px 30px; background: #4F46E5; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
+            Print / Save as PDF
+        </button>
+    </div>
+</body>
+</html>
+        `;
+    }
+
+    /**
+     * Format datetime for display.
+     * @param {string} dateString - ISO date string
+     * @returns {string} Formatted date/time
+     */
+    function formatDateTime(dateString) {
+        if (!dateString) return 'N/A';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        } catch {
+            return dateString;
+        }
+    }
+
+    // =========================================================================
+    // SEARCH FUNCTIONALITY
+    // =========================================================================
+
+    /**
+     * Setup search functionality for payment history.
+     */
+    function setupSearch() {
+        const searchForm = document.getElementById('header-search-form');
+        const searchInput = document.getElementById('header-search');
+
+        if (searchForm) {
+            searchForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                filterPayments(searchInput?.value || '');
+                return false;
+            });
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                filterPayments(e.target.value);
+            });
+            
+            // Prevent Enter from submitting/reloading
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    filterPayments(e.target.value);
+                }
+            });
+        }
+    }
+
+    /**
+     * Filter payments by search term.
+     * @param {string} term - Search term
+     */
+    function filterPayments(term) {
+        const query = term.toLowerCase().trim();
+        const tableBody = document.getElementById('receipt-table-body');
+        
+        if (!tableBody || payments.length === 0) return;
+
+        if (!query) {
+            // Show all payments
+            populatePaymentHistory(payments);
+            return;
+        }
+
+        // Filter payments matching spot name, garage name, date, or amount
+        const filtered = payments.filter(p => {
+            const spotName = (p.spotName || p.spot?.name || p.booking?.spot?.name || '').toLowerCase();
+            const garageName = (p.garageName || p.spot?.garage?.name || p.booking?.spot?.garage?.name || '').toLowerCase();
+            const date = formatDate(p.createdAt || p.date).toLowerCase();
+            const amount = p.amount ? `$${p.amount.toFixed(2)}` : '';
+            const status = (p.status || '').toLowerCase();
+            
+            return spotName.includes(query) || 
+                   garageName.includes(query) || 
+                   date.includes(query) ||
+                   amount.includes(query) ||
+                   status.includes(query);
+        });
+
+        if (filtered.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="5">No matching records found.</td></tr>';
+            return;
+        }
+
+        populatePaymentHistory(filtered);
     }
 
     // =========================================================================
@@ -616,6 +914,9 @@
             profileNameInput.addEventListener('input', () => updateInitials());
         }
 
+        // Setup search functionality
+        setupSearch();
+
         // Load profile data
         try {
             await loadProfile();
@@ -623,7 +924,7 @@
 
             // Load payment history
             try {
-                const payments = await getPaymentHistory();
+                payments = await getPaymentHistory();
                 populatePaymentHistory(payments);
             } catch (error) {
                 console.warn('[Profile] Could not load payment history:', error.message);
