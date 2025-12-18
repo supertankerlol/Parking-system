@@ -133,9 +133,9 @@ interfaces (Web/Mobile).
 ## 🖥 Server Console
 
 > **INFO:     127.0.0.1:39563 - "POST /update HTTP/1.1" 200 OK**
-> **INFO:     127.0.0.1:39564 - "POST /update HTTP/1.1" 200 OK**
-> **INFO:     127.0.0.1:39565 - "POST /update HTTP/1.1" 200 OK**
-> **INFO:     127.0.0.1:39566 - "POST /update HTTP/1.1" 200 OK**
+**INFO:     127.0.0.1:39564 - "POST /update HTTP/1.1" 200 OK**
+**INFO:     127.0.0.1:39565 - "POST /update HTTP/1.1" 200 OK**
+**INFO:     127.0.0.1:39566 - "POST /update HTTP/1.1" 200 OK**
 
 ## 🏁 Conclusion & Future Roadmap
 
