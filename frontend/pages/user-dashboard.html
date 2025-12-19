@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>User Dashboard</title>
+
+    <link rel="stylesheet" href="../css/fonts.css" />
+
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/sidebar.css" />
+    <link rel="stylesheet" href="../css/header.css" />
+    <link rel="stylesheet" href="../css/footer.css" />
+
+    <link rel="stylesheet" href="../css/dashboard.css" />
+  </head>
+  <body class="app-layout">
+    <div id="sidebar-placeholder"></div>
+
+    <main class="main-content">
+      <div id="header-placeholder"></div>
+
+      <div class="page-content">
+        <section class="dashboard-actions">
+          <a href="parking-availability.html" class="btn btn-primary btn-large">
+            <i class="icon-find-parking"></i>
+            <span>Find Parking Now</span>
+          </a>
+        </section>
+
+        <div class="dashboard-columns">
+          <section class="dashboard-card card--status">
+            <h2 class="card-title">Current Status</h2>
+            <div class="card-content">
+              <p id="status-not-parked">You are not currently parked.</p>
+
+              <div id="status-parked" class="hidden">
+                <p>You are parked in spot:</p>
+                <span class="status-spot-name">A-05</span>
+                <button class="btn btn-secondary btn-small">
+                  Manage Parking
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section class="dashboard-card card--reservations">
+            <h2 class="card-title">Active Reservations</h2>
+            <div class="card-content">
+              <ul id="reservation-list" class="reservation-list"></ul>
+              <p id="no-reservations">You have no upcoming reservations.</p>
+            </div>
+          </section>
+        </div>
+        <section class="dashboard-card card--history">
+          <div class="container__title-search">
+            <h2 class="card-title">Recent Parking History</h2>
+            <div class="page-header__right">
+              <form
+                class="page-header__search-form"
+                role="search"
+                id="header-search-form"
+              >
+                <label for="header-search" class="visually-hidden"
+                  >Search</label
+                >
+                <input
+                  type="search"
+                  id="header-search"
+                  class="page-header__search-input"
+                  placeholder="Search..."
+                />
+                <button
+                  type="submit"
+                  class="page-header__search-btn"
+                  aria-label="Submit search"
+                >
+                  <img class="icon-search" src="../assets/icons/search_dark.svg" alt="search icon">
+                </button>
+              </form>
+            </div>
+          </div>
+          <div class="card-content">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Spot</th>
+                  <th>Duration</th>
+                  <th>Cost</th>
+                </tr>
+              </thead>
+              <tbody id="history-table-body">
+                <tr>
+                  <td colspan="4">No parking history found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+      <div id="footer-placeholder"></div>
+    </main>
+
+    <script src="../js/main.js" defer></script>
+    <script src="../js/user-dashboard.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,87 @@
+/* --- [HEADER COMPONENT STYLES] ---
+  This file styles the <header class="page-header">
+  It uses the variables defined in 'style.css'.
+*/
+
+/* 1. Main Header Container */
+.page-header {
+    display: flex;
+    justify-content: space-between; /* Pushes left and right sides apart */
+    align-items: center;
+    
+    padding-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* 2. Left Side (Title) */
+.page-header__left {
+    flex: 1; /* Allows it to take up available space */
+}
+
+.page-header__title {
+    margin: 0;
+    font-size: 1.75rem; /* 28px */
+    color: var(--text-primary);
+}
+
+/* 3. Right Side (Actions) */
+.page-header__right {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md); /* Space between items */
+}
+
+/* 4. Search Form */
+.page-header__search-form {
+    position: relative; /* Container for the absolute icon button */
+}
+
+.page-header__search-input {
+    font-family: inherit;
+    font-size: 0.875rem; /* 14px */
+    color: var(--text-primary);
+    background-color: var(--bg-primary);
+    
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    
+    padding: var(--spacing-sm);
+    /* Make room for the icon on the left */
+    padding-left: calc(var(--spacing-sm) * 2 + 20px); /* padding + icon width */
+    
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.page-header__search-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.page-header__search-btn {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    
+    display: flex;
+    align-items: center;
+    
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    
+    padding: 0 var(--spacing-sm);
+    color: var(--text-secondary);
+}
+
+.page-header__search-btn:hover {
+    color: var(--text-primary);
+}
+
+.icon-search {
+    font-size: 1.25rem; /* 20px */
+    width: 20px;
+    text-align: center;
+}

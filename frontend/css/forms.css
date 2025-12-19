@@ -1,0 +1,109 @@
+/* --- [REUSABLE FORM STYLES] ---
+  This file styles all common form elements.
+  Link this in any HTML file that has a form.
+*/
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md); /* Spaces out form groups */
+}
+
+/* A single "row" in a form (label + input) */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm); /* Space between label and input */
+}
+
+/* Form labels */
+.form-label {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.875rem; /* 14px */
+}
+
+/* Optional text in a label */
+.form-label-optional {
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+/* Form inputs, textareas, selects */
+.form-control {
+    font-family: inherit;
+    font-size: 1rem;
+    color: var(--text-primary);
+    background-color: var(--bg-primary);
+    
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.form-control::placeholder {
+    color: var(--text-secondary);
+}
+
+/* For "Forgot Password?" */
+.form-options {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.form-link {
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.form-link:hover {
+    text-decoration: underline;
+}
+
+/* Utility for buttons */
+.btn-full-width {
+    width: 100%;
+    justify-content: center; /* Centers text/icon in the button */
+}
+
+/* For error messages */
+.form-error {
+    font-size: 0.875rem;
+    color: var(--accent-red);
+    text-align: center;
+    margin: 0;
+    display: none; /* Hidden by default */
+}
+
+.form-error.visible {
+    display: block; /* Show with JS */
+}
+
+.form-message {
+    font-size: 0.875rem;
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    display: none; /* Hidden by default */
+}
+
+.form-message.success {
+    background-color: var(--accent-green-light);
+    color: var(--accent-green);
+    border: 1px solid var(--accent-green);
+}
+
+.form-message.error {
+    background-color: var(--accent-red-light);
+    color: var(--accent-red);
+    border: 1px solid var(--accent-red);
+}
