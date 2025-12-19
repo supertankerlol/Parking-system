@@ -1,7 +1,7 @@
 
 ---
 
-# ✅ PRD.md (Product Requirements Document)
+#PRD.md (Product Requirements Document)
 
 ```md
 # Product Requirements Document (PRD)
